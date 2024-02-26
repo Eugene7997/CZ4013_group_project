@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "cz4013-group-project"
+version = "0.1.0"
+description = ""
+authors = ["Yi Pun Wong <wongyipun99@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+flake8 = "^7.0.0"
+pytest = "^8.0.2"
+black = "^24.2.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
