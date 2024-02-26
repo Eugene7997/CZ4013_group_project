@@ -6,7 +6,7 @@ class Message:
         self.message_type_identifier: int = message_type_identifier
 
     def marshall(self) -> bytes:
-        message_type_identifier = self.message_type_identifier.to_bytes(4, 'big')
+        message_type_identifier = self.message_type_identifier.to_bytes(4, "big")
         return message_type_identifier
 
     @staticmethod
@@ -34,7 +34,7 @@ class ReadFileRequest(Message):
         self.file_name: str = filename
 
     def marshall(self) -> bytes:
-        file_name: bytearray = bytearray(self.file_name, encoding='utf-8')
+        file_name: bytearray = bytearray(self.file_name, encoding="utf-8")
         file_name_length: bytes = len(file_name).to_bytes(4, "big")
         request_id: bytes = self.request_id.to_bytes(4, "big")
         offset: bytes = self.offset.to_bytes(4, "big")
@@ -47,18 +47,17 @@ class ReadFileRequest(Message):
         request_id: int = int.from_bytes(content[0:4], "big")
         offset: int = int.from_bytes(content[4:8], "big")
         read_bytes: int = int.from_bytes(content[8:12], "big")
-        file_name_length: int = int.from_bytes(content[12:16], "big")
         file_name: str = content[16:].decode("utf-8")
 
         return ReadFileRequest(request_id, offset, read_bytes, file_name)
 
     def __eq__(self, other):
         return (
-                isinstance(other, ReadFileRequest)
-                and self.request_id == other.request_id
-                and self.offset == other.offset
-                and self.read_bytes == other.read_bytes
-                and self.file_name == other.file_name
+            isinstance(other, ReadFileRequest)
+            and self.request_id == other.request_id
+            and self.offset == other.offset
+            and self.read_bytes == other.read_bytes
+            and self.file_name == other.file_name
         )
 
 
@@ -75,12 +74,14 @@ class WriteFileRequest(Message):
     def marshall(self) -> bytes:
         byte_id: bytes = self.request_id.to_bytes(4, "big")
         byte_offset: bytes = self.offset.to_bytes(4, "big")
-        byte_filename: bytearray = bytearray(self.file_name, encoding='utf-8')
+        byte_filename: bytearray = bytearray(self.file_name, encoding="utf-8")
         byte_filename_length: bytes = (len(byte_filename)).to_bytes(4, "big")
         byte_content: bytes = self.content
         byte_content_length: bytes = (len(byte_content)).to_bytes(4, "big")
 
-        marshalled_content = byte_id + byte_offset + byte_filename_length + byte_content_length + byte_filename + byte_content
+        marshalled_content = (
+            byte_id + byte_offset + byte_filename_length + byte_content_length + byte_filename + byte_content
+        )
         return super().marshall() + marshalled_content
 
     @staticmethod
@@ -89,18 +90,18 @@ class WriteFileRequest(Message):
         offset = int.from_bytes(content[4:8], "big")
         filename_length = int.from_bytes(content[8:12], "big")
         content_length = int.from_bytes(content[12:16], "big")
-        filename = content[16:16 + filename_length].decode('utf-8')
-        file_content = content[16 + filename_length:16 + filename_length + content_length]
+        filename = content[16: 16 + filename_length].decode("utf-8")
+        file_content = content[16 + filename_length: 16 + filename_length + content_length]
 
         return WriteFileRequest(request_id, offset, filename, file_content)
 
     def __eq__(self, other):
         return (
-                isinstance(other, WriteFileRequest)
-                and self.request_id == other.request_id
-                and self.offset == other.offset
-                and self.file_name == other.file_name
-                and self.content == other.content
+            isinstance(other, WriteFileRequest)
+            and self.request_id == other.request_id
+            and self.offset == other.offset
+            and self.file_name == other.file_name
+            and self.content == other.content
         )
 
 
@@ -118,9 +119,16 @@ class SubscribeToUpdatesRequest(Message):
         client_port_number: bytes = self.client_port_number.to_bytes(4, "big")
         monitoring_interval: bytes = self.monitoring_interval.to_bytes(4, "big")
         file_name_length: bytes = self.file_name_length.to_bytes(4, "big")
-        file_name: bytearray = bytearray(self.file_name, encoding='utf-8')
+        file_name: bytearray = bytearray(self.file_name, encoding="utf-8")
 
-        return super().marshall() + client_ip_address + client_port_number + monitoring_interval + file_name_length + file_name
+        return (
+            super().marshall()
+            + client_ip_address
+            + client_port_number
+            + monitoring_interval
+            + file_name_length
+            + file_name
+        )
 
     @staticmethod
     def unmarshall(content: bytes) -> "SubscribeToUpdatesRequest":
@@ -128,19 +136,20 @@ class SubscribeToUpdatesRequest(Message):
         client_port_number: int = int.from_bytes(content[4:8], "big")
         monitoring_interval: int = int.from_bytes(content[8:12], "big")
         filename_length: int = int.from_bytes(content[12:16], "big")
-        file_name: str = content[16: 16 + filename_length].decode('utf-8')
+        file_name: str = content[16: 16 + filename_length].decode("utf-8")
 
-        return SubscribeToUpdatesRequest(client_ip_address, client_port_number, monitoring_interval, filename_length,
-                                         file_name)
+        return SubscribeToUpdatesRequest(
+            client_ip_address, client_port_number, monitoring_interval, filename_length, file_name
+        )
 
     def __eq__(self, other):
         return (
-                isinstance(other, SubscribeToUpdatesRequest)
-                and self.client_ip_address == other.client_ip_address
-                and self.client_port_number == other.client_port_number
-                and self.monitoring_interval == other.monitoring_interval
-                and self.file_name_length == other.file_name_length
-                and self.file_name == other.file_name
+            isinstance(other, SubscribeToUpdatesRequest)
+            and self.client_ip_address == other.client_ip_address
+            and self.client_port_number == other.client_port_number
+            and self.monitoring_interval == other.monitoring_interval
+            and self.file_name_length == other.file_name_length
+            and self.file_name == other.file_name
         )
 
 
@@ -153,7 +162,7 @@ class ReadFileResponse(Message):
 
     def marshall(self) -> bytes:
         byte_id: bytes = self.reply_id.to_bytes(4, "big")
-        byte_content: bytearray = bytearray(self.content, encoding='utf-8')
+        byte_content: bytearray = bytearray(self.content, encoding="utf-8")
         marshalled_content: bytes = byte_id + byte_content
 
         return super().marshall() + marshalled_content
@@ -161,7 +170,7 @@ class ReadFileResponse(Message):
     @staticmethod
     def unmarshall(content: bytes) -> "ReadFileResponse":
         reply_id = int.from_bytes(content[0:4], "big")
-        content = content[4:].decode('utf-8')
+        content = content[4:].decode("utf-8")
         return ReadFileResponse(reply_id, content)
 
 
@@ -180,7 +189,7 @@ class WriteFileResponse(Message):
     @staticmethod
     def unmarshall(content: bytes) -> "WriteFileResponse":
         reply_id = int.from_bytes(content[0:4], "big")
-        is_successful = content[4:].decode('utf-8')
+        is_successful = content[4:].decode("utf-8")
         return WriteFileResponse(reply_id, is_successful)
 
 
