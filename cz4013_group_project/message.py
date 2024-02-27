@@ -11,17 +11,19 @@ class Message:
 
     @staticmethod
     def unmarshall(content: bytes) -> "Message":
-        class_identifier = int.from_bytes(content[0:4])
-        if class_identifier == 1:
-            return ReadFileRequest.unmarshall(content[4:])
-        elif class_identifier == 2:
-            return WriteFileRequest.unmarshall(content[4:])
-        elif class_identifier == 3:
-            return SubscribeToUpdatesRequest.unmarshall(content[4:])
-        elif class_identifier == 4:
-            return ReadFileResponse.unmarshall(content[4:])
-        elif class_identifier == 5:
-            return WriteFileResponse.unmarshall(content[4:])
+        class_mapping = {
+            1: ReadFileRequest,
+            2: WriteFileRequest,
+            3: SubscribeToUpdatesRequest,
+            4: ReadFileResponse,
+            5: WriteFileResponse,
+        }
+        class_identifier = int.from_bytes(content[0:4], "big")
+
+        if class_identifier in class_mapping:
+            return class_mapping[class_identifier].unmarshall(content[4:])
+        else:
+            raise ValueError(f"Unsupported class identifier: {class_identifier}")
 
 
 # Client
