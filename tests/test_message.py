@@ -18,8 +18,8 @@ class TestReadFileRequest:
         read_file_request: ReadFileRequest = ReadFileRequest(
             request_id=123, offset=456, read_bytes=15, filename="random_file_name"
         )
-        marshalled_data: bytes = read_file_request.marshall()
-        unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
+        marshalled_data: bytes = read_file_request._marshall_without_type_info()
+        unmarshalled_obj: Message = ReadFileRequest._unmarshall_without_type_info(marshalled_data)
         assert unmarshalled_obj == read_file_request
 
 
@@ -29,8 +29,8 @@ class TestWriteFileRequest:
         write_file_request: WriteFileRequest = WriteFileRequest(
             request_id=123, offset=456, file_name="random_file", content=b"random_file_content"
         )
-        marshalled_data: bytes = write_file_request.marshall()
-        unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
+        marshalled_data: bytes = write_file_request._marshall_without_type_info()
+        unmarshalled_obj: Message = WriteFileRequest._unmarshall_without_type_info(marshalled_data)
         assert unmarshalled_obj == write_file_request
 
 
@@ -44,6 +44,6 @@ class TestSubscribeToUpdatesRequest:
             file_name="random_file_name",
             file_name_length=len("random_file_name"),
         )
-        marshalled_data: bytes = subscribe_request.marshall()
-        unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
+        marshalled_data: bytes = subscribe_request._marshall_without_type_info()
+        unmarshalled_obj: Message = SubscribeToUpdatesRequest._unmarshall_without_type_info(marshalled_data)
         assert unmarshalled_obj == subscribe_request
