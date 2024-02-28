@@ -1,23 +1,25 @@
 import socket
 from abc import ABC, abstractmethod
+from typing import Dict, Type, Callable
 
 
 class Message(ABC):
-    class_id_to_class_ref = {}
-    class_ref_to_class_id = {}
+    class_id_to_class_ref: Dict[int, Type["Message"]] = {}
+    class_ref_to_class_id: Dict[Type["Message"], int] = {}
 
     @classmethod
-    def register_subclass(cls, class_id):
-        def decorator(subclass):
-            cls.class_id_to_class_ref[class_id] = subclass
-            cls.class_ref_to_class_id[subclass] = class_id
-            return subclass
+    def register_subclass(cls, class_id: int) -> Callable[[Type["Message"]], Type["Message"]]:
+        def decorator(class_ref: Type["Message"]) -> Type["Message"]:
+            cls.class_id_to_class_ref[class_id] = class_ref
+            cls.class_ref_to_class_id[class_ref] = class_id
+            return class_ref
 
         return decorator
 
     def marshall(self) -> bytes:
-        if self.__class__ not in self.class_ref_to_class_id:
-            raise RuntimeError(f"{self.__class__} has not been registered as a subclass")
+        class_ref: Type["Message"] = self.__class__
+        if class_ref not in self.class_ref_to_class_id:
+            raise RuntimeError(f"Unrecognized class reference: {class_ref}")
         class_id: bytes = self.class_ref_to_class_id[self.__class__].to_bytes(4, "big")
         return class_id + self._marshall_without_type_info()
 
@@ -25,8 +27,9 @@ class Message(ABC):
     def unmarshall(cls, content: bytes) -> "Message":
         class_id: int = int.from_bytes(content[0:4], "big")
         if class_id not in cls.class_id_to_class_ref:
-            raise RuntimeError(f"Unsupported class identifier: {class_id}")
-        return cls.class_id_to_class_ref[class_id]._unmarshall_without_type_info(content[4:])
+            raise RuntimeError(f"Unrecognized class ID: {class_id}")
+        class_ref = cls.class_id_to_class_ref[class_id]
+        return class_ref._unmarshall_without_type_info(content[4:])
 
     @abstractmethod
     def _marshall_without_type_info(self) -> bytes:
@@ -119,7 +122,14 @@ class WriteFileRequest(Message):
 
 @Message.register_subclass(class_id=3)
 class SubscribeToUpdatesRequest(Message):
-    def __init__(self, client_ip_address, client_port_number, monitoring_interval, file_name_length, file_name):
+    def __init__(
+        self,
+        client_ip_address: str,
+        client_port_number: int,
+        monitoring_interval: int,
+        file_name_length: int,
+        file_name: str,
+    ):
         self.client_ip_address: str = client_ip_address
         self.client_port_number: int = client_port_number
         self.monitoring_interval: int = monitoring_interval
@@ -161,7 +171,7 @@ class SubscribeToUpdatesRequest(Message):
 # Server
 @Message.register_subclass(class_id=4)
 class ReadFileResponse(Message):
-    def __init__(self, reply_id, content):
+    def __init__(self, reply_id: int, content: str):
         self.reply_id: int = reply_id
         self.content: str = content
 
@@ -180,7 +190,7 @@ class ReadFileResponse(Message):
 
 @Message.register_subclass(class_id=5)
 class WriteFileResponse(Message):
-    def __init__(self, reply_id, is_successful):
+    def __init__(self, reply_id: int, is_successful: bool):
         self.reply_id: int = reply_id
         self.is_successful: bool = is_successful
 
@@ -194,14 +204,16 @@ class WriteFileResponse(Message):
     def _unmarshall_without_type_info(content: bytes) -> "WriteFileResponse":
         reply_id = int.from_bytes(content[0:4], "big")
         is_successful = content[4:].decode("utf-8")
+        # TODO possible bug is_successful is encoded/decoded as str instead of bool
         return WriteFileResponse(reply_id, is_successful)
 
 
 # TODO: complete marshalling and unmarshalling and create test
+@Message.register_subclass(class_id=6)
 class SubscribeToUpdatesResponse(Message):
-    def __init__(self):
-        self.reply_id: int
-        self.is_successful: bool
+    def __init__(self, reply_id: int, is_successful: bool):
+        self.reply_id: int = reply_id
+        self.is_successful: bool = is_successful
 
     def _marshall_without_type_info(self) -> bytes:
         pass
@@ -212,10 +224,11 @@ class SubscribeToUpdatesResponse(Message):
 
 
 # TODO: complete marshalling and unmarshalling and create test
+@Message.register_subclass(class_id=7)
 class UpdateNotification(Message):
-    def __init__(self):
-        self.file_name: str
-        self.content: bytes
+    def __init__(self, file_name: str, content: bytes):
+        self.file_name: str = file_name
+        self.content: bytes = content
 
     def _marshall_without_type_info(self) -> bytes:
         pass
