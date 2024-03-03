@@ -1,6 +1,6 @@
 from ipaddress import IPv4Address
 
-from cz4013_group_project.message import (
+from remote_file_system.message import (
     Message,
     ReadFileRequest,
     WriteFileRequest,
