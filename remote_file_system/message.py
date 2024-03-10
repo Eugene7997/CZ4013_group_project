@@ -45,36 +45,26 @@ class Message(ABC):
 # Client
 @Message.register_subclass(class_id=1)
 class ReadFileRequest(Message):
-    def __init__(self, request_id: int, offset: int, read_bytes: int, filename: str):
+    def __init__(self, request_id: int, filename: str):
         self.request_id: int = request_id
-        self.offset: int = offset
-        self.read_bytes: int = read_bytes
         self.file_name: str = filename
 
     def _marshall_without_type_info(self) -> bytes:
+        request_id: bytes = self.request_id.to_bytes(4, "big")
         file_name: bytearray = bytearray(self.file_name, encoding="utf-8")
         file_name_length: bytes = len(file_name).to_bytes(4, "big")
-        request_id: bytes = self.request_id.to_bytes(4, "big")
-        offset: bytes = self.offset.to_bytes(4, "big")
-        read_bytes: bytes = self.read_bytes.to_bytes(4, "big")
-
-        return request_id + offset + read_bytes + file_name_length + file_name
+        return request_id + file_name_length + file_name
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "ReadFileRequest":
         request_id: int = int.from_bytes(content[0:4], "big")
-        offset: int = int.from_bytes(content[4:8], "big")
-        read_bytes: int = int.from_bytes(content[8:12], "big")
-        file_name: str = content[16:].decode("utf-8")
-
-        return ReadFileRequest(request_id, offset, read_bytes, file_name)
+        file_name: str = content[8:].decode("utf-8")
+        return ReadFileRequest(request_id, file_name)
 
     def __eq__(self, other):
         return (
             isinstance(other, ReadFileRequest)
             and self.request_id == other.request_id
-            and self.offset == other.offset
-            and self.read_bytes == other.read_bytes
             and self.file_name == other.file_name
         )
 
