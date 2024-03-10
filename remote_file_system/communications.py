@@ -40,27 +40,3 @@ def send_message(
 
     reply_message: Message = Message.unmarshall(incoming_bytes)
     return reply_message
-
-
-def listen_for_message(server_ip_address: IPv4Address, server_port_number: int) -> None:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    server_address: Tuple[str, int] = (str(server_ip_address), server_port_number)
-    sock.bind(server_address)
-
-    try:
-        while True:
-            logger.info(f"Socket is listening for messages at {server_ip_address}:{server_port_number}.")
-
-            incoming_bytes, sender_address = sock.recvfrom(4096)  # TODO review fixed buffer size
-            sender_ip_address, sender_port_number = sender_address
-            logger.info(f"Received {len(incoming_bytes)} bytes from {sender_ip_address}:{sender_port_number}.")
-
-            if incoming_bytes:
-                incoming_message: Message = Message.unmarshall(incoming_bytes)
-                logger.debug(f"Received {incoming_message}.")
-                # TODO use the server dispatcher module to process the inbound message
-
-                number_of_bytes_sent: int = sock.sendto(incoming_bytes, sender_address)  # TODO change server reply
-                logger.debug(f"{number_of_bytes_sent} bytes sent to {sender_ip_address}:{sender_port_number}.")
-    finally:
-        sock.close()
