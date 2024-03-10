@@ -16,7 +16,7 @@ class TestReadFileRequest:
     @staticmethod
     def test_marshall_unmarshall():
         read_file_request: ReadFileRequest = ReadFileRequest(
-            request_id=123, offset=456, read_bytes=15, filename="random_file_name"
+            request_id=123, filename="random_file_name"
         )
         marshalled_data: bytes = read_file_request.marshall()
         unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
@@ -25,7 +25,7 @@ class TestReadFileRequest:
     @staticmethod
     def test_marshall_unmarshall_without_type_info():
         read_file_request: ReadFileRequest = ReadFileRequest(
-            request_id=123, offset=456, read_bytes=15, filename="random_file_name"
+            request_id=123, filename="random_file_name"
         )
         marshalled_data: bytes = read_file_request._marshall_without_type_info()
         unmarshalled_obj: ReadFileRequest = ReadFileRequest._unmarshall_without_type_info(marshalled_data)
