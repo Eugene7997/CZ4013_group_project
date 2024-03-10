@@ -1,6 +1,6 @@
 from ipaddress import IPv4Address
 from socket import socket, AF_INET, SOCK_DGRAM
-from typing import Tuple, List
+from typing import Tuple
 from uuid import uuid4
 
 from loguru import logger
