@@ -71,10 +71,7 @@ def dispatch_message(server: Server, message: Message) -> Message:
             monitoring_interval_in_seconds=message.monitoring_interval,
             file_name=message.file_name,
         )
-        return SubscribeToUpdatesResponse(
-            is_successful=isSuccessful,
-            reply_id=uuid4()
-        )
+        return SubscribeToUpdatesResponse(is_successful=isSuccessful, reply_id=uuid4())
     logger.error("Server received an unrecognised message.")
 
 

@@ -2,6 +2,7 @@ import socket
 from abc import ABC, abstractmethod
 from ipaddress import IPv4Address
 from typing import Dict, Type, Callable
+from uuid import UUID
 
 
 class Message(ABC):
@@ -45,20 +46,20 @@ class Message(ABC):
 # Client
 @Message.register_subclass(class_id=1)
 class ReadFileRequest(Message):
-    def __init__(self, request_id: int, filename: str):
-        self.request_id: int = request_id
+    def __init__(self, request_id: UUID, filename: str):
+        self.request_id: UUID = request_id
         self.file_name: str = filename
 
     def _marshall_without_type_info(self) -> bytes:
-        request_id: bytes = self.request_id.to_bytes(4, "big")
+        request_id: bytes = self.request_id.bytes
         file_name: bytearray = bytearray(self.file_name, encoding="utf-8")
         file_name_length: bytes = len(file_name).to_bytes(4, "big")
         return request_id + file_name_length + file_name
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "ReadFileRequest":
-        request_id: int = int.from_bytes(content[0:4], "big")
-        file_name: str = content[8:].decode("utf-8")
+        request_id: UUID = UUID(bytes=content[0:16])
+        file_name: str = content[20:].decode("utf-8")
         return ReadFileRequest(request_id, file_name)
 
     def __eq__(self, other):
@@ -71,14 +72,14 @@ class ReadFileRequest(Message):
 
 @Message.register_subclass(class_id=2)
 class WriteFileRequest(Message):
-    def __init__(self, request_id: int, offset: int, file_name: str, content: bytes):
-        self.request_id: int = request_id
+    def __init__(self, request_id: UUID, offset: int, file_name: str, content: bytes):
+        self.request_id: UUID = request_id
         self.offset: int = offset
         self.file_name: str = file_name
         self.content: bytes = content
 
     def _marshall_without_type_info(self) -> bytes:
-        byte_id: bytes = self.request_id.to_bytes(4, "big")
+        byte_id: bytes = self.request_id.bytes
         byte_offset: bytes = self.offset.to_bytes(4, "big")
         byte_filename: bytearray = bytearray(self.file_name, encoding="utf-8")
         byte_filename_length: bytes = (len(byte_filename)).to_bytes(4, "big")
@@ -92,12 +93,12 @@ class WriteFileRequest(Message):
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "WriteFileRequest":
-        request_id = int.from_bytes(content[0:4], "big")
-        offset = int.from_bytes(content[4:8], "big")
-        filename_length = int.from_bytes(content[8:12], "big")
-        content_length = int.from_bytes(content[12:16], "big")
-        filename = content[16 : 16 + filename_length].decode("utf-8")
-        file_content = content[16 + filename_length : 16 + filename_length + content_length]
+        request_id: UUID = UUID(bytes=content[0:16])
+        offset = int.from_bytes(content[16:20], "big")
+        filename_length = int.from_bytes(content[20:24], "big")
+        content_length = int.from_bytes(content[24:28], "big")
+        filename = content[28 : 28 + filename_length].decode("utf-8")
+        file_content = content[28 + filename_length : 28 + filename_length + content_length]
 
         return WriteFileRequest(request_id, offset, filename, file_content)
 
@@ -162,20 +163,19 @@ class SubscribeToUpdatesRequest(Message):
 # Server
 @Message.register_subclass(class_id=4)
 class ReadFileResponse(Message):
-    def __init__(self, reply_id: int, content: str):
-        self.reply_id: int = reply_id
-        self.content: str = content
+    def __init__(self, reply_id: int, content: bytes):
+        self.reply_id: UUID = reply_id
+        self.content: bytes = content
 
     def _marshall_without_type_info(self) -> bytes:
-        byte_id: bytes = self.reply_id.to_bytes(4, "big")
-        byte_content: bytearray = bytearray(self.content, encoding="utf-8")
-        marshalled_content: bytes = byte_id + byte_content
+        byte_id: bytes = self.reply_id.bytes
+        marshalled_content: bytes = byte_id + self.content
         return marshalled_content
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "ReadFileResponse":
-        reply_id = int.from_bytes(content[0:4], "big")
-        content = content[4:].decode("utf-8")
+        reply_id = UUID(bytes=content[0:16])
+        content = content[16:]
         return ReadFileResponse(reply_id, content)
 
     def __eq__(self, other):
@@ -184,20 +184,20 @@ class ReadFileResponse(Message):
 
 @Message.register_subclass(class_id=5)
 class WriteFileResponse(Message):
-    def __init__(self, reply_id: int, is_successful: bool):
-        self.reply_id: int = reply_id
+    def __init__(self, reply_id: UUID, is_successful: bool):
+        self.reply_id: UUID = reply_id
         self.is_successful: bool = is_successful
 
     def _marshall_without_type_info(self) -> bytes:
-        byte_id: bytes = self.reply_id.to_bytes(4, "big")
+        byte_id: bytes = self.reply_id.bytes
         byte_success: bytes = int(self.is_successful).to_bytes(1, "big")
         marshalled_content = byte_id + byte_success
         return marshalled_content
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "WriteFileResponse":
-        reply_id = int.from_bytes(content[0:4], "big")
-        is_successful = bool(int.from_bytes(content[4:], "big"))
+        reply_id = UUID(bytes=content[0:16])
+        is_successful = bool(int.from_bytes(content[16:], "big"))
         return WriteFileResponse(reply_id, is_successful)
 
     def __eq__(self, other):
@@ -210,20 +210,20 @@ class WriteFileResponse(Message):
 
 @Message.register_subclass(class_id=6)
 class SubscribeToUpdatesResponse(Message):
-    def __init__(self, reply_id: int, is_successful: bool):
-        self.reply_id: int = reply_id
+    def __init__(self, reply_id: UUID, is_successful: bool):
+        self.reply_id: UUID = reply_id
         self.is_successful: bool = is_successful
 
     def _marshall_without_type_info(self) -> bytes:
-        byte_id: bytes = self.reply_id.to_bytes(4, "big")
+        byte_id: bytes = self.reply_id.bytes
         byte_success: bytes = int(self.is_successful).to_bytes(1, "big")
         marshalled_content = byte_id + byte_success
         return marshalled_content
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "SubscribeToUpdatesResponse":
-        reply_id = int.from_bytes(content[0:4], "big")
-        is_successful = bool(int.from_bytes(content[4:], "big"))
+        reply_id = UUID(bytes=content[0:16])
+        is_successful = bool(int.from_bytes(content[16:], "big"))
         return SubscribeToUpdatesResponse(reply_id, is_successful)
 
     def __eq__(self, other):
