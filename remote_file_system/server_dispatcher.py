@@ -63,7 +63,7 @@ def dispatch_message(server: Server, message: Message) -> Message:
                 )
             return WriteFileResponse(reply_id=uuid4(), is_successful=is_successful)
         else:
-            return WriteFileResponse(reply_id=uuid4(), is_succesful=False)
+            return WriteFileResponse(reply_id=uuid4(), is_successful=False)
     elif isinstance(message, SubscribeToUpdatesRequest):
         isSuccessful: bool = server.subscribe_to_updates(
             client_ip_address=message.client_ip_address,
