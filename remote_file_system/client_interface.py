@@ -53,8 +53,9 @@ class Client:
             timeout_in_seconds=5,
         )
         is_successful = incoming_message.is_successful
-        # TODO: Return error message if not successful
-        pass
+        if is_successful is not True:
+            logger.error("Write Failed. hehe")
+        return is_successful
 
     def subscribe_to_updates(self, file_name: str, monitoring_interval_in_seconds: int, file_name_length: int) -> None:
         outgoing_message: Message = SubscribeToUpdatesRequest(
