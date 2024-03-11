@@ -37,9 +37,9 @@ class Client:
             timeout_in_seconds=5,
         )
         entire_file_content: bytes = incoming_message.content
-        return entire_file_content
         # TODO cache entire file
-        # TODO: jump to offset and extract the correct number of bytes
+        desired_file_content = entire_file_content[offset : offset + number_of_bytes]
+        return desired_file_content
 
     def write_file(self, file_name: str, offset: int, number_of_bytes: int, content: bytes):
         outgoing_message: Message = WriteFileRequest(
