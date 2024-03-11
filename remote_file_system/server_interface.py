@@ -27,7 +27,7 @@ class Server:
         if not os.path.exists(file_path):
             return False, None
 
-        with open(file_path, "wb") as file:
+        with open(file_path, "r+b") as file:
             file.seek(offset)
             file.write(file_content)
 

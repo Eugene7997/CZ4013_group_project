@@ -37,25 +37,25 @@ class Client:
             timeout_in_seconds=5,
         )
         entire_file_content: bytes = incoming_message.content
-        return entire_file_content
         # TODO cache entire file
-        # TODO: jump to offset and extract the correct number of bytes
+        desired_file_content = entire_file_content[offset : offset + number_of_bytes]
+        return desired_file_content
 
     def write_file(self, file_name: str, offset: int, number_of_bytes: int, content: bytes):
         outgoing_message: Message = WriteFileRequest(
             request_id=uuid4(), offset=offset, file_name=file_name, content=content
         )
-        incoming_bytes: bytes = send_message(
+        incoming_message: WriteFileResponse = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
             max_attempts_to_send_message=3,
             timeout_in_seconds=5,
         )
-        incoming_message: WriteFileResponse = Message.unmarshall(incoming_bytes)
         is_successful = incoming_message.is_successful
-        # TODO: Return error message if not successful
-        pass
+        if is_successful is not True:
+            logger.error("Write Failed. hehe")
+        return is_successful
 
     def subscribe_to_updates(self, file_name: str, monitoring_interval_in_seconds: int, file_name_length: int) -> None:
         outgoing_message: Message = SubscribeToUpdatesRequest(
