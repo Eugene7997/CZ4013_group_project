@@ -15,6 +15,8 @@ from remote_file_system.message import (
     UpdateNotification,
     SubscribeToUpdatesRequest,
     SubscribeToUpdatesResponse,
+    ModifiedTimestampRequest,
+    ModifiedTimestampResponse,
 )
 from remote_file_system.server_interface import Server
 
@@ -72,6 +74,10 @@ def dispatch_message(server: Server, message: Message) -> Message:
             file_name=message.file_name,
         )
         return SubscribeToUpdatesResponse(is_successful=isSuccessful, reply_id=uuid4())
+    elif isinstance(message, ModifiedTimestampRequest):
+        data: int = server.get_modified_timestamp(file_path=message.file_path)
+        # TODO: implement is_successful later on
+        return ModifiedTimestampResponse(reply_id=uuid4(), is_successful=True, modification_timestamp=data)
     logger.error("Server received an unrecognised message.")
 
 

@@ -33,6 +33,12 @@ class Server:
 
         return True, self.subscribed_clients[file_name]
 
+    def get_modified_timestamp(self, file_path: str) -> int:
+        if not os.path.exists(file_path):
+            raise RuntimeError(f"File path {file_path} does not exist.")
+        timestamp_of_modifications_to_file_in_seconds: int = int(os.path.getmtime(file_path))
+        return timestamp_of_modifications_to_file_in_seconds
+
     def subscribe_to_updates(
         self,
         client_ip_address: IPv4Address,
