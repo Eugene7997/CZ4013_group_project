@@ -261,3 +261,56 @@ class UpdateNotification(Message):
             and self.file_name == other.file_name
             and self.content == other.content
         )
+
+
+@Message.register_subclass(class_id=8)
+class ModifiedTimestampRequest(Message):
+    def __init__(self, file_path: str, request_id: UUID):
+        self.file_path = file_path
+        self.request_id: UUID = request_id
+
+    def _marshall_without_type_info(self) -> bytes:
+        request_id_bytes = self.request_id.bytes
+        filepath_bytes: bytes = bytearray(self.file_path, encoding="utf-8")
+        return request_id_bytes + filepath_bytes
+
+    @staticmethod
+    def _unmarshall_without_type_info(content: bytes) -> "ModifiedTimestampRequest":
+        request_id: UUID = UUID(bytes=content[0:16])
+        file_path: str = content[16:].decode("utf-8")
+        return ModifiedTimestampRequest(file_path, request_id)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, ModifiedTimestampRequest)
+            and self.file_path == other.file_path
+            and self.request_id == other.request_id
+        )
+
+
+@Message.register_subclass(class_id=9)
+class ModifiedTimestampResponse(Message):
+    def __init__(self, reply_id: UUID, modification_timestamp: int):
+        self.reply_id: UUID = reply_id
+        self.modification_timestamp: int = modification_timestamp
+
+    def _marshall_without_type_info(self) -> bytes:
+        reply_id_bytes: bytes = self.reply_id.bytes
+        modification_timestamp_bytes: bytes = self.modification_timestamp.to_bytes(4, "big")
+        return reply_id_bytes + modification_timestamp_bytes
+
+    @staticmethod
+    def _unmarshall_without_type_info(content: bytes) -> "ModifiedTimestampResponse":
+        reply_id_bytes: bytes = content[0:16]
+        reply_id: UUID = UUID(bytes=reply_id_bytes)
+        # TODO: add is_successful to marshalling and unmarshalling
+        modification_timestamp_bytes: bytes = content[16:]
+        modification_timestamp: int = int.from_bytes(modification_timestamp_bytes, "big")
+        return ModifiedTimestampResponse(reply_id=reply_id, modification_timestamp=modification_timestamp)
+
+    def __eq__(self, other) -> bool:
+        return (
+            isinstance(other, ModifiedTimestampResponse)
+            and self.reply_id == other.reply_id
+            and self.modification_timestamp == other.modification_timestamp
+        )
