@@ -9,6 +9,6 @@ class TestServerInterface:
     @staticmethod
     def test_read_file_file_exists():
         server = Server(file_storage_location=os.getcwd())
-        actual = server.read_file("tests/mock_data/mock_data_a.txt")
+        actual = server.read_file("tests/mock_data/english_alphabets.txt")
         expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".encode("UTF-8")
         assert actual == expected
