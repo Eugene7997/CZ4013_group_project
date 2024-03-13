@@ -14,6 +14,8 @@ from remote_file_system.message import (
     SubscribeToUpdatesRequest,
     SubscribeToUpdatesResponse,
     UpdateNotification,
+    ModifiedTimestampRequest,
+    ModifiedTimestampResponse
 )
 from remote_file_system.communications import send_message
 
@@ -100,3 +102,18 @@ class Client:
                     logger.debug(f"Received {incoming_message.content}.")
         finally:
             sock.close()
+
+    def get_modified_timestamp(self, file_name: str) -> int:
+        outgoing_message: Message = ModifiedTimestampRequest(
+            request_id=uuid4(),
+            file_name=file_name
+        )
+        incoming_message: ModifiedTimestampResponse = send_message(
+            message=outgoing_message,
+            recipient_ip_address=self.server_ip_address,
+            recipient_port_number=self.server_port_number,
+            max_attempts_to_send_message=3,
+            timeout_in_seconds=5,
+        )
+        # TODO: add is_successful check
+        return incoming_message.modification_timestamp
