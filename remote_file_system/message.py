@@ -299,7 +299,6 @@ class ModifiedTimestampResponse(Message):
         reply_id_bytes: bytes = self.reply_id.bytes
         is_successful_bytes: bytes = int(self.is_successful).to_bytes(1, "big")
         modification_timestamp_bytes: bytes = self.modification_timestamp.to_bytes(4, "big")
-        
         return reply_id_bytes + is_successful_bytes + modification_timestamp_bytes
 
     @staticmethod
