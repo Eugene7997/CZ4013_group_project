@@ -26,7 +26,7 @@ class Client:
         self.server_port_number: int = server_port_number
 
     def read_file(self, file_name: str, offset: int, number_of_bytes: int) -> bytes:
-        # TODO: check cache if file_name exists in cache + within freshness, if yes, return immmediately
+        # TODO: check cache if file_name exists in cache + within freshness, if yes, return immediately
 
         outgoing_message: Message = ReadFileRequest(request_id=uuid4(), filename=file_name)
         incoming_message: ReadFileResponse = send_message(

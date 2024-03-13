@@ -1,6 +1,6 @@
 from ipaddress import IPv4Address
 from uuid import uuid4
-
+import time
 from remote_file_system.message import (
     Message,
     ReadFileRequest,
@@ -10,6 +10,8 @@ from remote_file_system.message import (
     WriteFileResponse,
     SubscribeToUpdatesResponse,
     UpdateNotification,
+    ModifiedTimestampRequest,
+    ModifiedTimestampResponse,
 )
 
 
@@ -151,3 +153,45 @@ class TestUpdateNotification:
         marshalled_data: bytes = update_notification._marshall_without_type_info()
         unmarshalled_obj: UpdateNotification = UpdateNotification._unmarshall_without_type_info(marshalled_data)
         assert unmarshalled_obj == update_notification
+
+
+class TestModifiedTimestampRequest:
+    @staticmethod
+    def test_marshall_unmarshall():
+        modified_timestamp_request = ModifiedTimestampRequest(file_path="/test/path", request_id=uuid4())
+        marshalled_data: bytes = modified_timestamp_request.marshall()
+        unmarshalled_data: Message = Message.unmarshall(marshalled_data)
+        assert modified_timestamp_request == unmarshalled_data
+
+    @staticmethod
+    def test_marshall_unmarshall_without_type_info():
+        modified_timestamp_request: ModifiedTimestampRequest = ModifiedTimestampRequest(
+            file_path="/test/path", request_id=uuid4()
+        )
+        marshalled_data: bytes = modified_timestamp_request._marshall_without_type_info()
+        unmarshalled_obj: ModifiedTimestampRequest = ModifiedTimestampRequest._unmarshall_without_type_info(
+            marshalled_data
+        )
+        assert unmarshalled_obj == modified_timestamp_request
+
+
+class TestModifiedTimestampResponse:
+    @staticmethod
+    def test_marshall_unmarshall():
+        modified_timestamp_response: ModifiedTimestampResponse = ModifiedTimestampResponse(
+            reply_id=uuid4(), modification_timestamp=int(time.time())
+        )
+        marshalled_data: bytes = modified_timestamp_response.marshall()
+        unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
+        assert unmarshalled_obj == modified_timestamp_response
+
+    @staticmethod
+    def test_marshall_unmarshall_without_type_info():
+        modified_timestamp_response: ModifiedTimestampResponse = ModifiedTimestampResponse(
+            reply_id=uuid4(), modification_timestamp=int(time.time())
+        )
+        marshalled_data: bytes = modified_timestamp_response._marshall_without_type_info()
+        unmarshalled_obj: ModifiedTimestampResponse = ModifiedTimestampResponse._unmarshall_without_type_info(
+            marshalled_data
+        )
+        assert unmarshalled_obj == modified_timestamp_response
