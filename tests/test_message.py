@@ -179,7 +179,7 @@ class TestModifiedTimestampResponse:
     @staticmethod
     def test_marshall_unmarshall():
         modified_timestamp_response: ModifiedTimestampResponse = ModifiedTimestampResponse(
-            reply_id=uuid4(), modification_timestamp=int(time.time())
+            reply_id=uuid4(), modification_timestamp=int(time.time()), is_successful=False
         )
         marshalled_data: bytes = modified_timestamp_response.marshall()
         unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
@@ -188,7 +188,7 @@ class TestModifiedTimestampResponse:
     @staticmethod
     def test_marshall_unmarshall_without_type_info():
         modified_timestamp_response: ModifiedTimestampResponse = ModifiedTimestampResponse(
-            reply_id=uuid4(), modification_timestamp=int(time.time())
+            reply_id=uuid4(), modification_timestamp=int(time.time()), is_successful=False
         )
         marshalled_data: bytes = modified_timestamp_response._marshall_without_type_info()
         unmarshalled_obj: ModifiedTimestampResponse = ModifiedTimestampResponse._unmarshall_without_type_info(
