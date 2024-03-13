@@ -1,5 +1,6 @@
 import os
 import time
+from remote_file_system.client_interface import Client
 
 
 class Cache:
@@ -15,52 +16,64 @@ class Cache:
         else:
             return False
 
+    # TODO: create new function request... to use this method with error checking
     def put_in_cache(self, file_name: str, content: str) -> None:
         file_path: str = self.cache_location + file_name
         with open(file_path, "x") as file:
             file.write(content)
 
+    # TODO: create new function request... to use this method with error checking
     def get_from_cache(self, file_name: str) -> bytes:
         file_path: str = self.cache_location + file_name
         with open(file_path, "rb") as file:
             return file.read()
 
-    def get_file_modification_timestamp(self, file_name: str) -> int:
+    def _get_file_modification_timestamp(self, file_name: str) -> int:
         file_path: str = self.cache_location + file_name
         timestamp_of_modifications_to_file_in_seconds: int = int(os.path.getmtime(file_path))
         return timestamp_of_modifications_to_file_in_seconds
 
-    def request_file_modification_timestamp(self, file_name: str):
+    def _request_file_modification_timestamp(self, file_name: str):
         if self.is_in_cache(file_name):
-            return self.get_file_modification_timestamp(file_name)
+            return self._get_file_modification_timestamp(file_name)
         else:
             return None
 
-    def validity_check_without_server(self, file_name: str):
+    def _validity_check_without_server(self, file_name: str):
         file_path: str = self.cache_location + file_name
 
-        T = self.request_file_modification_timestamp(file_name)
+        T = self._request_file_modification_timestamp(file_name)
 
         if abs(T - self.last_validated[file_path]) < self.freshness_interval_in_seconds:
             return True
         else:
             return False
 
-    def request_server(self):
-        pass
-
-    def validity_check_with_server(self, file_name: str):
-        pass
+    def _validity_check_with_server(self, file_name: str, client: Client):
+        file_path: str = self.cache_location + file_name
+        T = self._request_file_modification_timestamp(file_name)
+        T_server = client.get_modified_timestamp(file_path=file_path)
+        if abs(T - T_server) < self.freshness_interval_in_seconds:
+            return True
+        else:
+            return False
 
     def validity_check(self, file_name):
-        if self.validity_check_without_server(file_name) is True:
-            if self.validity_check_with_server(file_name) is True:
+        if self._validity_check_without_server(file_name) is True:
+            return True
+        else:
+            if self._validity_check_with_server(file_name) is True:
                 return True
         return False
 
-    def update_file_validation_timestamp(self, file_name: str):
+    def _update_file_validation_timestamp(self, file_name: str):
         file_path: str = self.cache_location + file_name
         self.last_validated[file_path] = time.time()
 
     def validate_file(self, file_name: str):
+        if self.is_in_cache(file_name):
+            self._update_file_validation_timestamp(file_name)
+
+    # TODO: implement this
+    def get_new_file_from_server(self, client: Client):
         pass
