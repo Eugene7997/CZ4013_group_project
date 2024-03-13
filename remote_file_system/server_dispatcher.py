@@ -75,10 +75,12 @@ def dispatch_message(server: Server, message: Message) -> Message:
         )
         return SubscribeToUpdatesResponse(is_successful=isSuccessful, reply_id=uuid4())
     elif isinstance(message, ModifiedTimestampRequest):
-        data: int = server.get_modified_timestamp(file_path=message.file_path)
-        # TODO: implement is_successful later on
-        return ModifiedTimestampResponse(reply_id=uuid4(), is_successful=True, modification_timestamp=data)
-    logger.error("Server received an unrecognised message.")
+        is_successful, data = server.get_modified_timestamp(file_path=message.file_path)
+        if is_successful:
+            return ModifiedTimestampResponse(reply_id=uuid4(),  modification_timestamp=data, is_successful=True)
+        else:
+            logger.error("File doesn't exist on server.")
+            return ModifiedTimestampResponse(reply_id=uuid4(),  modification_timestamp=data, is_successful=False)
 
 
 def send_update_notification(client_ip_address: IPv4Address, client_port_number: int, content: bytes):

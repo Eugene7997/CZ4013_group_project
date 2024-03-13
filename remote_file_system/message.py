@@ -290,27 +290,35 @@ class ModifiedTimestampRequest(Message):
 
 @Message.register_subclass(class_id=9)
 class ModifiedTimestampResponse(Message):
-    def __init__(self, reply_id: UUID, modification_timestamp: int):
+    def __init__(self, reply_id: UUID, is_successful: bool, modification_timestamp: int):
         self.reply_id: UUID = reply_id
         self.modification_timestamp: int = modification_timestamp
+        self.is_successful: bool = is_successful
 
     def _marshall_without_type_info(self) -> bytes:
         reply_id_bytes: bytes = self.reply_id.bytes
+        is_successful_bytes: bytes = int(self.is_successful).to_bytes(1, "big")
         modification_timestamp_bytes: bytes = self.modification_timestamp.to_bytes(4, "big")
-        return reply_id_bytes + modification_timestamp_bytes
+        
+        return reply_id_bytes + is_successful_bytes + modification_timestamp_bytes
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "ModifiedTimestampResponse":
         reply_id_bytes: bytes = content[0:16]
         reply_id: UUID = UUID(bytes=reply_id_bytes)
-        # TODO: add is_successful to marshalling and unmarshalling
-        modification_timestamp_bytes: bytes = content[16:]
+        is_successful: bool = bool(int.from_bytes(content[16:17], "big"))
+        modification_timestamp_bytes: bytes = content[17:]
         modification_timestamp: int = int.from_bytes(modification_timestamp_bytes, "big")
-        return ModifiedTimestampResponse(reply_id=reply_id, modification_timestamp=modification_timestamp)
+        return ModifiedTimestampResponse(
+            reply_id=reply_id,
+            modification_timestamp=modification_timestamp,
+            is_successful=is_successful
+        )
 
     def __eq__(self, other) -> bool:
         return (
             isinstance(other, ModifiedTimestampResponse)
             and self.reply_id == other.reply_id
             and self.modification_timestamp == other.modification_timestamp
+            and self.is_successful == other.is_successful
         )
