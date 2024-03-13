@@ -36,7 +36,6 @@ class Server:
     def get_modified_timestamp(self, file_path: str) -> Tuple[bool, int]:
         if not os.path.exists(file_path):
             return False, None
-            #raise RuntimeError(f"File path {file_path} does not exist.")
         timestamp_of_modifications_to_file_in_seconds: int = int(os.path.getmtime(file_path))
         return True, timestamp_of_modifications_to_file_in_seconds
 
