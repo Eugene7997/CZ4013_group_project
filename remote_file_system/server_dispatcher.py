@@ -77,10 +77,10 @@ def dispatch_message(server: Server, message: Message) -> Message:
     elif isinstance(message, ModifiedTimestampRequest):
         is_successful, data = server.get_modified_timestamp(file_path=message.file_path)
         if is_successful:
-            return ModifiedTimestampResponse(reply_id=uuid4(),  modification_timestamp=data, is_successful=True)
+            return ModifiedTimestampResponse(reply_id=uuid4(), modification_timestamp=data, is_successful=True)
         else:
             logger.error("File doesn't exist on server.")
-            return ModifiedTimestampResponse(reply_id=uuid4(),  modification_timestamp=data, is_successful=False)
+            return ModifiedTimestampResponse(reply_id=uuid4(), modification_timestamp=data, is_successful=False)
 
 
 def send_update_notification(client_ip_address: IPv4Address, client_port_number: int, content: bytes):

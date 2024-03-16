@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 from ipaddress import IPv4Address
+from pathlib import Path
 
 import pytest
 
@@ -30,7 +31,9 @@ class TestClientServer:
             client_port_number=CLIENT_PORT_NUMBER,
             server_ip_address=self.SERVER_IP_ADDRESS,
             server_port_number=self.SERVER_PORT_NUMBER,
+            cache_working_directory=Path("cache"),
+            freshness_interval_in_seconds=5,
         )
         expected = "EFGH".encode("utf-8")
-        actual = client.read_file(file_name="./tests/mock_data/english_alphabets.txt", offset=4, number_of_bytes=4)
+        actual = client.read_file(file_path="./tests/mock_data/english_alphabets.txt", offset=4, number_of_bytes=4)
         assert actual == expected

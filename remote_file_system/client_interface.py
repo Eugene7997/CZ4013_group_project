@@ -1,10 +1,14 @@
 import time
-from socket import socket, AF_INET, SOCK_DGRAM, gethostbyname, gethostname
 from ipaddress import IPv4Address
-from uuid import uuid4
-from loguru import logger
+from pathlib import Path
+from socket import socket, AF_INET, SOCK_DGRAM, gethostbyname, gethostname
 from typing import Tuple
+from uuid import uuid4
 
+from loguru import logger
+
+from remote_file_system.client_cache import Cache
+from remote_file_system.communications import send_message
 from remote_file_system.message import (
     Message,
     ReadFileRequest,
@@ -15,22 +19,55 @@ from remote_file_system.message import (
     SubscribeToUpdatesResponse,
     UpdateNotification,
     ModifiedTimestampRequest,
-    ModifiedTimestampResponse
+    ModifiedTimestampResponse,
 )
-from remote_file_system.communications import send_message
 
 
 class Client:
-    def __init__(self, client_port_number: int, server_ip_address: IPv4Address, server_port_number: int):
+    def __init__(
+        self,
+        client_port_number: int,
+        server_ip_address: IPv4Address,
+        server_port_number: int,
+        cache_working_directory: Path,
+        freshness_interval_in_seconds: int,
+    ):
         self.client_ip_address: IPv4Address = gethostbyname(gethostname())
         self.client_port_number: int = client_port_number
         self.server_ip_address: IPv4Address = server_ip_address
         self.server_port_number: int = server_port_number
+        self.cache: Cache = Cache(cache_working_directory)
+        self.freshness_interval_in_seconds: int = freshness_interval_in_seconds
 
-    def read_file(self, file_name: str, offset: int, number_of_bytes: int) -> bytes:
-        # TODO: check cache if file_name exists in cache + within freshness, if yes, return immediately
+    def read_file(self, file_path: Path, offset: int, number_of_bytes: int) -> bytes:
+        if not self.cache.is_in_cache(file_path):
+            entire_file_content: bytes = self._get_file_from_server(file_path)
+            desired_file_content = entire_file_content[offset : offset + number_of_bytes]
+            return desired_file_content
 
-        outgoing_message: Message = ReadFileRequest(request_id=uuid4(), filename=file_name)
+        if self._check_validity_on_client(file_path):
+            return self.cache.get_file_content(file_path)
+
+        if self._check_validity_on_server(file_path):
+            self.cache.validate_cache_for(file_path)
+            return self.cache.get_file_content(file_path)
+
+        entire_file_content: bytes = self._get_file_from_server(file_path)
+        desired_file_content = entire_file_content[offset : offset + number_of_bytes]
+        return desired_file_content
+
+    def _check_validity_on_client(self, file_path: Path) -> bool:
+        current_timestamp: int = int(time.time())
+        validation_timestamp: int = self.cache.get_validation_timestamp(file_path)
+        return current_timestamp - validation_timestamp < self.freshness_interval_in_seconds
+
+    def _check_validity_on_server(self, file_path: Path) -> bool:
+        cache_modification_timestamp: int = self.cache.get_modification_timestamp(file_path)
+        server_modification_timestamp: int = self._get_modification_timestamp_from_server(file_path)
+        return cache_modification_timestamp == server_modification_timestamp
+
+    def _get_file_from_server(self, file_path: Path) -> bytes:
+        outgoing_message: Message = ReadFileRequest(request_id=uuid4(), filename=file_path)
         incoming_message: ReadFileResponse = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
@@ -39,9 +76,26 @@ class Client:
             timeout_in_seconds=5,
         )
         entire_file_content: bytes = incoming_message.content
-        # TODO cache entire file
-        desired_file_content = entire_file_content[offset : offset + number_of_bytes]
-        return desired_file_content
+        server_modification_timestamp: int = self._get_modification_timestamp_from_server(file_path)
+        self.cache.put_in_cache(
+            file_path=file_path,
+            file_content=entire_file_content,
+            validation_timestamp=int(time.time()),
+            modification_timestamp=server_modification_timestamp,
+        )
+        return entire_file_content
+
+    def _get_modification_timestamp_from_server(self, file_path: Path) -> int:
+        outgoing_message: Message = ModifiedTimestampRequest(request_id=uuid4(), file_path=file_path)
+        incoming_message: ModifiedTimestampResponse = send_message(
+            message=outgoing_message,
+            recipient_ip_address=self.server_ip_address,
+            recipient_port_number=self.server_port_number,
+            max_attempts_to_send_message=3,
+            timeout_in_seconds=5,
+        )
+        # TODO add is_successful check
+        return incoming_message.modification_timestamp
 
     def write_file(self, file_name: str, offset: int, number_of_bytes: int, content: bytes):
         outgoing_message: Message = WriteFileRequest(
@@ -62,7 +116,6 @@ class Client:
     def subscribe_to_updates(self, file_name: str, monitoring_interval_in_seconds: int, file_name_length: int) -> None:
         outgoing_message: Message = SubscribeToUpdatesRequest(
             client_ip_address=self.client_ip_address,
-            # Port number of client
             client_port_number=self.client_port_number,
             file_name_length=file_name_length,
             file_name=file_name,
@@ -102,18 +155,3 @@ class Client:
                     logger.debug(f"Received {incoming_message.content}.")
         finally:
             sock.close()
-
-    def get_modified_timestamp(self, file_name: str) -> int:
-        outgoing_message: Message = ModifiedTimestampRequest(
-            request_id=uuid4(),
-            file_name=file_name
-        )
-        incoming_message: ModifiedTimestampResponse = send_message(
-            message=outgoing_message,
-            recipient_ip_address=self.server_ip_address,
-            recipient_port_number=self.server_port_number,
-            max_attempts_to_send_message=3,
-            timeout_in_seconds=5,
-        )
-        # TODO: add is_successful check
-        return incoming_message.modification_timestamp

@@ -309,9 +309,7 @@ class ModifiedTimestampResponse(Message):
         modification_timestamp_bytes: bytes = content[17:]
         modification_timestamp: int = int.from_bytes(modification_timestamp_bytes, "big")
         return ModifiedTimestampResponse(
-            reply_id=reply_id,
-            modification_timestamp=modification_timestamp,
-            is_successful=is_successful
+            reply_id=reply_id, modification_timestamp=modification_timestamp, is_successful=is_successful
         )
 
     def __eq__(self, other) -> bool:
