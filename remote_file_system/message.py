@@ -163,48 +163,60 @@ class SubscribeToUpdatesRequest(Message):
 # Server
 @Message.register_subclass(class_id=4)
 class ReadFileResponse(Message):
-    def __init__(self, reply_id: int, content: bytes):
+    def __init__(self, reply_id: int, content: bytes, modification_timestamp: int):
         self.reply_id: UUID = reply_id
+        self.modification_timestamp: int = modification_timestamp
         self.content: bytes = content
 
     def _marshall_without_type_info(self) -> bytes:
         byte_id: bytes = self.reply_id.bytes
-        marshalled_content: bytes = byte_id + self.content
+        modification_time: bytes = self.modification_timestamp.to_bytes(4, "big")
+        marshalled_content: bytes = byte_id + modification_time + self.content
         return marshalled_content
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "ReadFileResponse":
         reply_id = UUID(bytes=content[0:16])
-        content = content[16:]
-        return ReadFileResponse(reply_id, content)
+        modification_time = int.from_bytes(content[16:20], "big")
+        content = content[20:]
+        return ReadFileResponse(reply_id, content, modification_time)
 
     def __eq__(self, other):
-        return isinstance(other, ReadFileResponse) and self.reply_id == other.reply_id and self.content == other.content
+        return (
+            isinstance(other, ReadFileResponse)
+            and self.reply_id == other.reply_id
+            and self.content == other.content
+            and self.modification_timestamp == other.modification_timestamp
+        )
 
 
 @Message.register_subclass(class_id=5)
 class WriteFileResponse(Message):
-    def __init__(self, reply_id: UUID, is_successful: bool):
+    def __init__(self, reply_id: UUID, is_successful: bool, modification_timestamp=None):
         self.reply_id: UUID = reply_id
         self.is_successful: bool = is_successful
+        self.modification_timestamp: int = modification_timestamp
 
     def _marshall_without_type_info(self) -> bytes:
         byte_id: bytes = self.reply_id.bytes
         byte_success: bytes = int(self.is_successful).to_bytes(1, "big")
-        marshalled_content = byte_id + byte_success
+        modification_timestamp: bytes = self.modification_timestamp.to_bytes(4, "big")
+        marshalled_content = byte_id + byte_success + modification_timestamp
         return marshalled_content
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "WriteFileResponse":
         reply_id = UUID(bytes=content[0:16])
-        is_successful = bool(int.from_bytes(content[16:], "big"))
-        return WriteFileResponse(reply_id, is_successful)
+        is_successful = bool(int.from_bytes(content[16:17], "big"))
+        modification_timestamp = int.from_bytes(content[17:], "big")
+        return WriteFileResponse(reply_id, is_successful, modification_timestamp)
 
     def __eq__(self, other):
         return (
             isinstance(other, WriteFileResponse)
             and self.reply_id == other.reply_id
             and self.is_successful == other.is_successful
+            and self.modification_timestamp == other.modification_timestamp
         )
 
 
@@ -236,30 +248,34 @@ class SubscribeToUpdatesResponse(Message):
 
 @Message.register_subclass(class_id=7)
 class UpdateNotification(Message):
-    def __init__(self, file_name: str, content: bytes):
+    def __init__(self, file_name: str, content: bytes, modification_timestamp: int):
         self.file_name: str = file_name
+        self.modification_timestamp = modification_timestamp
         self.content: bytes = content
 
     def _marshall_without_type_info(self) -> bytes:
         file_name_length: bytes = (len(self.file_name)).to_bytes(4, "big")
         file_name: bytearray = bytearray(self.file_name, encoding="utf-8")
+        modification_timestamp: bytes = (self.modification_timestamp).to_bytes(4, "big")
         byte_content: bytes = self.content
         byte_content_length: bytes = (len(byte_content)).to_bytes(4, "big")
-        return file_name_length + file_name + byte_content_length + byte_content
+        return file_name_length + file_name + modification_timestamp + byte_content_length + byte_content
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "UpdateNotification":
         file_name_length: int = int.from_bytes(content[0:4], "big")
         file_name: str = content[4 : 4 + file_name_length].decode("utf-8")
-        content_length: int = int.from_bytes(content[4 + file_name_length : 8 + file_name_length], "big")
-        content: bytes = content[8 + file_name_length :]
-        return UpdateNotification(file_name, content)
+        modification_timestamp: int = int.from_bytes(content[4 + file_name_length : 8 + file_name_length], "big")
+        content_length: int = int.from_bytes(content[8 + file_name_length : 12 + file_name_length], "big")
+        content: bytes = content[12 + file_name_length :]
+        return UpdateNotification(file_name, content, modification_timestamp)
 
     def __eq__(self, other):
         return (
             isinstance(other, UpdateNotification)
             and self.file_name == other.file_name
             and self.content == other.content
+            and self.modification_timestamp == other.modification_timestamp
         )
 
 
