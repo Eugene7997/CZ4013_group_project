@@ -118,13 +118,13 @@ class SubscribeToUpdatesRequest(Message):
         self,
         client_ip_address: IPv4Address,
         client_port_number: int,
-        monitoring_interval: int,
+        monitoring_interval_in_seconds: int,
         file_name_length: int,
         file_name: str,
     ):
         self.client_ip_address: IPv4Address = client_ip_address
         self.client_port_number: int = client_port_number
-        self.monitoring_interval: int = monitoring_interval
+        self.monitoring_interval: int = monitoring_interval_in_seconds
         self.file_name_length: int = file_name_length
         self.file_name: str = file_name
 

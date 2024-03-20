@@ -57,7 +57,7 @@ class TestSubscribeToUpdatesRequest:
         subscribe_request: SubscribeToUpdatesRequest = SubscribeToUpdatesRequest(
             client_ip_address=IPv4Address("192.168.255.255"),
             client_port_number=123,
-            monitoring_interval=15,
+            monitoring_interval_in_seconds=15,
             file_name="random_file_name",
             file_name_length=len("random_file_name"),
         )
@@ -70,7 +70,7 @@ class TestSubscribeToUpdatesRequest:
         subscribe_request: SubscribeToUpdatesRequest = SubscribeToUpdatesRequest(
             client_ip_address=IPv4Address("192.168.255.255"),
             client_port_number=123,
-            monitoring_interval=15,
+            monitoring_interval_in_seconds=15,
             file_name="random_file_name",
             file_name_length=len("random_file_name"),
         )
