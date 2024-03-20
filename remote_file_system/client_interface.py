@@ -158,7 +158,8 @@ class Client:
         try:
             while True:
                 logger.info(
-                    f"Client is subscribed for updates and waiting at {self.client_ip_address}:{self.client_port_number}."
+                    f"Client is subscribed for updates and waiting at "
+                    f"{self.client_ip_address}:{self.client_port_number}."
                 )
                 incoming_bytes, sender_address = sock.recvfrom(4096)
                 sender_ip_address, sender_port_number = sender_address
