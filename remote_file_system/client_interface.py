@@ -1,7 +1,7 @@
 import time
 from ipaddress import IPv4Address
 from pathlib import Path
-from socket import socket, AF_INET, SOCK_DGRAM, gethostbyname, gethostname
+from socket import socket, AF_INET, SOCK_DGRAM, gethostbyname, gethostname, timeout
 from typing import Tuple
 from uuid import uuid4
 
@@ -46,10 +46,12 @@ class Client:
             return desired_file_content
 
         if self._check_validity_on_client(file_path):
+            # TODO: this is returning the entire file. Need splice to return offset stuff
             return self.cache.get_file_content(file_path)
 
         if self._check_validity_on_server(file_path):
             self.cache.validate_cache_for(file_path)
+            # TODO: this is returning the entire file. Need splice to return offset stuff
             return self.cache.get_file_content(file_path)
 
         entire_file_content: bytes = self._get_file_from_server(file_path)
@@ -76,9 +78,9 @@ class Client:
             timeout_in_seconds=5,
         )
         entire_file_content: bytes = incoming_message.content
-        server_modification_timestamp: int = self._get_modification_timestamp_from_server(file_path)
+        server_modification_timestamp: int = incoming_message.modification_timestamp
         self.cache.put_in_cache(
-            file_path=file_path,
+            file_path=Path(file_path),
             file_content=entire_file_content,
             validation_timestamp=int(time.time()),
             modification_timestamp=server_modification_timestamp,
@@ -116,9 +118,9 @@ class Client:
             return
 
         if self.cache.is_in_cache(file_path=file_path):
-            server_modification_timestamp: int = self._get_modification_timestamp_from_server(file_path)
+            server_modification_timestamp: int = incoming_message.modification_timestamp
             self.cache.put_in_cache(
-                file_path=file_path,
+                file_path=Path(file_path),
                 file_content=content,
                 validation_timestamp=int(time.time()),
                 modification_timestamp=server_modification_timestamp,
