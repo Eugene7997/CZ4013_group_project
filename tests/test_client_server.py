@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from remote_file_system.client_interface import Client
-from remote_file_system.server_dispatcher import listen_and_respond_to_messages
+from remote_file_system.server_dispatcher import listen_for_messages
 from remote_file_system.server_interface import Server
 
 
@@ -17,7 +17,7 @@ class TestClientServer:
     def start_server(self):
         server = Server(server_root_directory=Path.cwd() / "tests" / "server")
         server_process = multiprocessing.Process(
-            target=listen_and_respond_to_messages, args=(server, self.SERVER_IP_ADDRESS, self.SERVER_PORT_NUMBER)
+            target=listen_for_messages, args=(server, self.SERVER_IP_ADDRESS, self.SERVER_PORT_NUMBER)
         )
         server_process.start()
         yield

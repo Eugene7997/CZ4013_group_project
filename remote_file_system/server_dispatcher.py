@@ -21,7 +21,7 @@ from remote_file_system.message import (
 from remote_file_system.server_interface import Server
 
 
-def listen_and_respond_to_messages(server: Server, server_ip_address: IPv4Address, server_port_number: int) -> None:
+def listen_for_messages(server: Server, server_ip_address: IPv4Address, server_port_number: int) -> None:
     sock = socket(AF_INET, SOCK_DGRAM)
     server_address: Tuple[str, int] = (str(server_ip_address), server_port_number)
     sock.bind(server_address)
@@ -37,39 +37,51 @@ def listen_and_respond_to_messages(server: Server, server_ip_address: IPv4Addres
             if incoming_bytes:
                 incoming_message: Message = Message.unmarshall(incoming_bytes)
                 logger.debug(f"Received {incoming_message}.")
-                reply: Message = dispatch_message(server=server, message=incoming_message)
-                outgoing_bytes: bytes = reply.marshall()
-                number_of_bytes_sent: int = sock.sendto(outgoing_bytes, sender_address)
-                logger.debug(f"{number_of_bytes_sent} bytes sent to {sender_ip_address}:{sender_port_number}.")
+                dispatch_message(
+                    server=server,
+                    message=incoming_message,
+                    client_ip_address=IPv4Address(sender_ip_address),
+                    client_port_number=sender_port_number,
+                )
     finally:
         sock.close()
 
 
-def dispatch_message(server: Server, message: Message) -> Message:
+def dispatch_message(server: Server, message: Message, client_ip_address: IPv4Address, client_port_number: int) -> None:
     # client-initiated requests
     if isinstance(message, ReadFileRequest):
         content: bytes = server.read_file(relative_file_path=message.file_name)
-        return ReadFileResponse(
-            reply_id=uuid4(),
-            content=content,
+        is_successful, modification_timestamp = server.get_modified_timestamp(message.file_name)
+        reply: ReadFileResponse = ReadFileResponse(
+            reply_id=uuid4(), content=content, modification_timestamp=modification_timestamp
         )
+        send_message(reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5)
     elif isinstance(message, WriteFileRequest):
         is_successful, subscribed_clients = server.write_file(
             relative_file_path=message.file_name, offset=message.offset, file_content=message.content
         )
+        is_successful, modification_timestamp = server.get_modified_timestamp(message.file_name)
+
+        reply: WriteFileResponse = WriteFileResponse(
+            reply_id=uuid4(), is_successful=is_successful, modification_timestamp=modification_timestamp
+        )
+        send_message(reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5)
+
         if is_successful:
             for subscribed_client in subscribed_clients:
                 monitoring_expiration_timestamp, client_ip_address, client_port_number = subscribed_client
                 # TODO send update notification below only if current time is before monitoring_expiration_timestamp
-                send_update_notification(
-                    client_ip_address=client_ip_address,
-                    client_port_number=client_port_number,
-                    file_path=message.file_name,
-                    content=message.content,
+
+                update_notification = UpdateNotification(
+                    file_name=message.file_name, content=message.content, modification_timestamp=modification_timestamp
                 )
-            return WriteFileResponse(reply_id=uuid4(), is_successful=is_successful)
-        else:
-            return WriteFileResponse(reply_id=uuid4(), is_successful=False)
+                send_message(
+                    message=update_notification,
+                    recipient_ip_address=client_ip_address,
+                    recipient_port_number=client_port_number,
+                    max_attempts_to_send_message=1,
+                    timeout_in_seconds=5,
+                )
     elif isinstance(message, SubscribeToUpdatesRequest):
         isSuccessful: bool = server.subscribe_to_updates(
             client_ip_address=message.client_ip_address,
@@ -77,22 +89,26 @@ def dispatch_message(server: Server, message: Message) -> Message:
             monitoring_interval_in_seconds=message.monitoring_interval,
             relative_file_path=message.file_name,
         )
-        return SubscribeToUpdatesResponse(is_successful=isSuccessful, reply_id=uuid4())
+        reply: SubscribeToUpdatesResponse = SubscribeToUpdatesResponse(is_successful=isSuccessful, reply_id=uuid4())
+        send_message(
+            message=reply,
+            recipient_ip_address=client_ip_address,
+            recipient_port_number=client_port_number,
+            max_attempts_to_send_message=1,
+            timeout_in_seconds=5,
+        )
+        return
     elif isinstance(message, ModifiedTimestampRequest):
-        is_successful, data = server.get_modified_timestamp(relative_file_path=message.file_path)
-        if is_successful:
-            return ModifiedTimestampResponse(reply_id=uuid4(), modification_timestamp=data, is_successful=True)
-        else:
-            logger.error("File doesn't exist on server.")
-            return ModifiedTimestampResponse(reply_id=uuid4(), modification_timestamp=data, is_successful=False)
-
-
-def send_update_notification(client_ip_address: IPv4Address, client_port_number: int, file_path: str, content: bytes):
-    update_notification = UpdateNotification(file_name=file_path, content=content)
-    send_message(
-        message=update_notification,
-        recipient_ip_address=client_ip_address,
-        recipient_port_number=client_port_number,
-        max_attempts_to_send_message=3,
-        timeout_in_seconds=5,
-    )
+        is_successful, modification_timestamp = server.get_modified_timestamp(relative_file_path=message.file_path)
+        reply: ModifiedTimestampResponse = ModifiedTimestampResponse(
+            reply_id=uuid4(), modification_timestamp=modification_timestamp, is_successful=is_successful
+        )
+        send_message(
+            message=reply,
+            recipient_ip_address=client_ip_address,
+            recipient_port_number=client_port_number,
+            max_attempts_to_send_message=1,
+            timeout_in_seconds=5,
+        )
+        if not is_successful:
+            logger.error(f"Server failed to check modification timestamp as {message.file_path} does not exist.")
