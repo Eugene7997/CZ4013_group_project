@@ -48,20 +48,24 @@ def listen_and_respond_to_messages(server: Server, server_ip_address: IPv4Addres
 def dispatch_message(server: Server, message: Message) -> Message:
     # client-initiated requests
     if isinstance(message, ReadFileRequest):
-        content: bytes = server.read_file(file_name=message.file_name)
+        content: bytes = server.read_file(relative_file_path=message.file_name)
         return ReadFileResponse(
             reply_id=uuid4(),
             content=content,
         )
     elif isinstance(message, WriteFileRequest):
         is_successful, subscribed_clients = server.write_file(
-            file_name=message.file_name, offset=message.offset, file_content=message.content
+            relative_file_path=message.file_name, offset=message.offset, file_content=message.content
         )
         if is_successful:
             for subscribed_client in subscribed_clients:
-                client_ip_address, client_port_number = subscribed_client
+                monitoring_expiration_timestamp, client_ip_address, client_port_number = subscribed_client
+                # TODO send update notification below only if current time is before monitoring_expiration_timestamp
                 send_update_notification(
-                    client_ip_address=client_ip_address, client_port_number=client_port_number, content=message.content
+                    client_ip_address=client_ip_address,
+                    client_port_number=client_port_number,
+                    file_path=message.file_name,
+                    content=message.content,
                 )
             return WriteFileResponse(reply_id=uuid4(), is_successful=is_successful)
         else:
@@ -71,11 +75,11 @@ def dispatch_message(server: Server, message: Message) -> Message:
             client_ip_address=message.client_ip_address,
             client_port_number=message.client_port_number,
             monitoring_interval_in_seconds=message.monitoring_interval,
-            file_name=message.file_name,
+            relative_file_path=message.file_name,
         )
         return SubscribeToUpdatesResponse(is_successful=isSuccessful, reply_id=uuid4())
     elif isinstance(message, ModifiedTimestampRequest):
-        is_successful, data = server.get_modified_timestamp(file_path=message.file_path)
+        is_successful, data = server.get_modified_timestamp(relative_file_path=message.file_path)
         if is_successful:
             return ModifiedTimestampResponse(reply_id=uuid4(), modification_timestamp=data, is_successful=True)
         else:
@@ -83,10 +87,8 @@ def dispatch_message(server: Server, message: Message) -> Message:
             return ModifiedTimestampResponse(reply_id=uuid4(), modification_timestamp=data, is_successful=False)
 
 
-def send_update_notification(client_ip_address: IPv4Address, client_port_number: int, content: bytes):
-    update_notification = UpdateNotification(
-        client_ip_address=client_ip_address, client_port_number=client_port_number, content=content
-    )
+def send_update_notification(client_ip_address: IPv4Address, client_port_number: int, file_path: str, content: bytes):
+    update_notification = UpdateNotification(file_name=file_path, content=content)
     send_message(
         message=update_notification,
         recipient_ip_address=client_ip_address,

@@ -21,6 +21,9 @@ def send_message(
 
     for attempt_number in range(max_attempts_to_send_message):
         sock: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.bind(("", 0))
+        sender_ip_address, sender_port_number = sock.getsockname()
+        logger.debug(f"Socket sending a message from {sender_ip_address}:{sender_port_number}.")
         sock.settimeout(timeout_in_seconds)
 
         try:
@@ -30,7 +33,7 @@ def send_message(
             incoming_bytes: bytes = sock.recv(4096)  # TODO review fixed buffer size
             break
         except socket.timeout:
-            logger.warning(f"Attempt {attempt_number} timed out while waiting for a response.")
+            logger.warning(f"Attempt {attempt_number + 1} timed out while waiting for a response.")
         finally:
             sock.close()
 
