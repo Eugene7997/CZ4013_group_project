@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from remote_file_system.server_interface import Server
 
@@ -8,7 +8,7 @@ class TestServerInterface:
 
     @staticmethod
     def test_read_file_file_exists():
-        server = Server(file_storage_location=os.getcwd())
-        actual = server.read_file("tests/mock_data/english_alphabets.txt")
+        server = Server(server_root_directory=Path.cwd() / "tests" / "server")
+        actual = server.read_file("english_alphabets.txt")
         expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".encode("UTF-8")
         assert actual == expected
