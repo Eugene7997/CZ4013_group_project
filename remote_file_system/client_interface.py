@@ -97,9 +97,9 @@ class Client:
         # TODO add is_successful check
         return incoming_message.modification_timestamp
 
-    def write_file(self, file_name: str, offset: int, number_of_bytes: int, content: bytes):
+    def write_file(self, file_path: Path, offset: int, number_of_bytes: int, content: bytes):
         outgoing_message: Message = WriteFileRequest(
-            request_id=uuid4(), offset=offset, file_name=file_name, content=content
+            request_id=uuid4(), offset=offset, file_name=file_path, content=content
         )
         incoming_message: WriteFileResponse = send_message(
             message=outgoing_message,
@@ -108,10 +108,23 @@ class Client:
             max_attempts_to_send_message=3,
             timeout_in_seconds=5,
         )
-        is_successful = incoming_message.is_successful
-        if is_successful is not True:
-            logger.error("Write Failed. hehe")
-        return is_successful
+        if not incoming_message:
+            logger.error("Server did not respond to a Write File operation.")
+            return
+        if not incoming_message.is_successful:
+            logger.error("Server responded that the Write File operation is not successful.")
+            return
+
+        if self.cache.is_in_cache(file_path=file_path):
+            server_modification_timestamp: int = self._get_modification_timestamp_from_server(file_path)
+            self.cache.put_in_cache(
+                file_path=file_path,
+                file_content=content,
+                validation_timestamp=int(time.time()),
+                modification_timestamp=server_modification_timestamp,
+            )
+
+        return incoming_message.is_successful
 
     def subscribe_to_updates(self, file_name: str, monitoring_interval_in_seconds: int, file_name_length: int) -> None:
         outgoing_message: Message = SubscribeToUpdatesRequest(
@@ -121,7 +134,7 @@ class Client:
             file_name=file_name,
             monitoring_interval_in_seconds=monitoring_interval_in_seconds,
         )
-        incoming_bytes: bytes = send_message(
+        incoming_message: SubscribeToUpdatesResponse = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
@@ -129,13 +142,12 @@ class Client:
             timeout_in_seconds=5,
         )
 
-        incoming_message: SubscribeToUpdatesResponse = Message.unmarshall(incoming_bytes)
-        if incoming_message.is_successful:
-            self.listen_for_updates(monitoring_interval_in_seconds)
-        else:
-            logger.error("Subscribe Failed. hehe")
+        if not incoming_message.is_successful:
+            logger.error(f"Client failed to subscribe to updates for {file_name}.")
+            return
+        self.listen_for_updates(monitoring_interval_in_seconds)
 
-    def listen_for_updates(self, monitoring_interval_in_seconds: int):
+    def listen_for_updates(self, monitoring_interval_in_seconds: int) -> bool:
         sock = socket(AF_INET, SOCK_DGRAM)
         client_address: Tuple[str, int] = (str(self.client_ip_address), int(self.client_port_number))
         sock.bind(client_address)
@@ -153,5 +165,15 @@ class Client:
                 if incoming_bytes:
                     incoming_message: UpdateNotification = Message.unmarshall(incoming_bytes)
                     logger.debug(f"Received {incoming_message.content}.")
+                    server_modification_timestamp: int = self._get_modification_timestamp_from_server(
+                        incoming_message.file_name
+                    )
+                    self.cache.put_in_cache(
+                        file_path=incoming_message.file_name,
+                        file_content=incoming_message.content,
+                        validation_timestamp=int(time.time()),
+                        modification_timestamp=server_modification_timestamp,
+                    )
+
         finally:
             sock.close()
