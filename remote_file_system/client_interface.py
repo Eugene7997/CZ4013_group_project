@@ -153,13 +153,13 @@ class Client:
         sock = socket(AF_INET, SOCK_DGRAM)
         client_address: Tuple[str, int] = (str(self.client_ip_address), int(self.client_port_number))
         sock.bind(client_address)
-
-        current_timestamp: int = int(time.time())
-        monitoring_expiration_timestamp: int = current_timestamp + monitoring_interval_in_seconds
+        sock.settimeout(monitoring_interval_in_seconds)
 
         try:
-            while int(time.time()) <= monitoring_expiration_timestamp:
-                logger.info(f"Socket is listening for messages at {self.client_ip_address}:{self.client_port_number}.")
+            while True:
+                logger.info(
+                    f"Client is subscribed for updates and waiting at {self.client_ip_address}:{self.client_port_number}."
+                )
                 incoming_bytes, sender_address = sock.recvfrom(4096)
                 sender_ip_address, sender_port_number = sender_address
                 logger.info(f"Received {len(incoming_bytes)} bytes from {sender_ip_address}:{sender_port_number}.")
@@ -167,15 +167,16 @@ class Client:
                 if incoming_bytes:
                     incoming_message: UpdateNotification = Message.unmarshall(incoming_bytes)
                     logger.debug(f"Received {incoming_message.content}.")
-                    server_modification_timestamp: int = self._get_modification_timestamp_from_server(
-                        incoming_message.file_name
-                    )
+                    server_modification_timestamp: int = incoming_message.modification_timestamp
                     self.cache.put_in_cache(
-                        file_path=incoming_message.file_name,
+                        file_path=Path(incoming_message.file_name),
                         file_content=incoming_message.content,
                         validation_timestamp=int(time.time()),
                         modification_timestamp=server_modification_timestamp,
                     )
-
+        except timeout:
+            logger.info(
+                f"Client has waited for {monitoring_interval_in_seconds} seconds and will no longer listen for updates."
+            )
         finally:
             sock.close()
