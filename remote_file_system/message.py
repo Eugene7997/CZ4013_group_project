@@ -335,3 +335,55 @@ class ModifiedTimestampResponse(Message):
             and self.modification_timestamp == other.modification_timestamp
             and self.is_successful == other.is_successful
         )
+
+
+@Message.register_subclass(class_id=10)
+class DeleteFileRequest(Message):
+    def __init__(self, request_id: UUID, filename: str):
+        self.request_id: UUID = request_id
+        self.file_name: str = filename
+
+    def _marshall_without_type_info(self) -> bytes:
+        request_id: bytes = self.request_id.bytes
+        file_name: bytearray = bytearray(self.file_name, encoding="utf-8")
+        file_name_length: bytes = len(file_name).to_bytes(4, "big")
+        return request_id + file_name_length + file_name
+
+    @staticmethod
+    def _unmarshall_without_type_info(content: bytes) -> "DeleteFileRequest":
+        request_id: UUID = UUID(bytes=content[0:16])
+        file_name: str = content[20:].decode("utf-8")
+        return DeleteFileRequest(request_id, file_name)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, DeleteFileRequest)
+            and self.request_id == other.request_id
+            and self.file_name == other.file_name
+        )
+
+
+@Message.register_subclass(class_id=11)
+class DeleteFileResponse(Message):
+    def __init__(self, reply_id: int, is_successful: bool):
+        self.reply_id: UUID = reply_id
+        self.is_successful: bool = is_successful
+
+    def _marshall_without_type_info(self) -> bytes:
+        byte_id: bytes = self.reply_id.bytes
+        byte_success: bytes = int(self.is_successful).to_bytes(1, "big")
+        marshalled_content: bytes = byte_id + byte_success
+        return marshalled_content
+
+    @staticmethod
+    def _unmarshall_without_type_info(content: bytes) -> "DeleteFileResponse":
+        reply_id = UUID(bytes=content[0:16])
+        is_successful = bool(int.from_bytes(content[16:], "big"))
+        return DeleteFileResponse(reply_id, is_successful)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, DeleteFileResponse)
+            and self.reply_id == other.reply_id
+            and self.is_successful == other.is_successful
+        )
