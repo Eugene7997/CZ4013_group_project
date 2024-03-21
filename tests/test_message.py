@@ -12,6 +12,8 @@ from remote_file_system.message import (
     UpdateNotification,
     ModifiedTimestampRequest,
     ModifiedTimestampResponse,
+    DeleteFileRequest,
+    DeleteFileResponse,
 )
 
 
@@ -195,3 +197,35 @@ class TestModifiedTimestampResponse:
             marshalled_data
         )
         assert unmarshalled_obj == modified_timestamp_response
+
+
+class TestDeleteFileRequest:
+    @staticmethod
+    def test_marshall_unmarshall():
+        delete_file_request: DeleteFileRequest = DeleteFileRequest(request_id=uuid4(), filename="random_file_name")
+        marshalled_data: bytes = delete_file_request.marshall()
+        unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
+        assert unmarshalled_obj == delete_file_request
+
+    @staticmethod
+    def test_marshall_unmarshall_without_type_info():
+        delete_file_request: DeleteFileRequest = DeleteFileRequest(request_id=uuid4(), filename="random_file_name")
+        marshalled_data: bytes = delete_file_request._marshall_without_type_info()
+        unmarshalled_obj: DeleteFileRequest = DeleteFileRequest._unmarshall_without_type_info(marshalled_data)
+        assert unmarshalled_obj == delete_file_request
+
+
+class TestDeleteFileResponse:
+    @staticmethod
+    def test_marshall_unmarshall():
+        delete_file_response: DeleteFileResponse = DeleteFileResponse(reply_id=uuid4(), is_successful=False)
+        marshalled_data: bytes = delete_file_response.marshall()
+        unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
+        assert unmarshalled_obj == delete_file_response
+
+    @staticmethod
+    def test_marshall_unmarshall_without_type_info():
+        delete_file_response: DeleteFileResponse = DeleteFileResponse(reply_id=uuid4(), is_successful=True)
+        marshalled_data: bytes = delete_file_response._marshall_without_type_info()
+        unmarshalled_obj: DeleteFileResponse = DeleteFileResponse._unmarshall_without_type_info(marshalled_data)
+        assert unmarshalled_obj == delete_file_response
