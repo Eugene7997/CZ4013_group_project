@@ -65,3 +65,10 @@ class Server:
         )
         self.subscribed_clients[relative_file_path].append(subscribed_client)
         return True
+
+    def delete_file(self, file_name: str) -> bool:
+        file_path = os.path.join(self.server_root_directory, file_name)
+        if not os.path.exists(file_path):
+            return False
+        os.remove(file_path)
+        return True
