@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from remote_file_system.server_interface import Server
@@ -13,10 +14,11 @@ class TestServerInterface:
         expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".encode("UTF-8")
         assert actual == expected
     
+    @staticmethod
     def test_delete_file():
         server_file_directory = os.getcwd()
         f = open(f"{server_file_directory}/deleteme.txt", "w")
-        server = Server(file_storage_location=server_file_directory)
+        server = Server(server_root_directory=server_file_directory)
         actual = server.delete_file("deleteme.txt")
         expected = True
         assert actual == expected
