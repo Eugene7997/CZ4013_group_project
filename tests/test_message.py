@@ -57,7 +57,7 @@ class TestSubscribeToUpdatesRequest:
         subscribe_request: SubscribeToUpdatesRequest = SubscribeToUpdatesRequest(
             client_ip_address=IPv4Address("192.168.255.255"),
             client_port_number=123,
-            monitoring_interval=15,
+            monitoring_interval_in_seconds=15,
             file_name="random_file_name",
             file_name_length=len("random_file_name"),
         )
@@ -70,7 +70,7 @@ class TestSubscribeToUpdatesRequest:
         subscribe_request: SubscribeToUpdatesRequest = SubscribeToUpdatesRequest(
             client_ip_address=IPv4Address("192.168.255.255"),
             client_port_number=123,
-            monitoring_interval=15,
+            monitoring_interval_in_seconds=15,
             file_name="random_file_name",
             file_name_length=len("random_file_name"),
         )
@@ -84,14 +84,18 @@ class TestSubscribeToUpdatesRequest:
 class TestReadFileResponse:
     @staticmethod
     def test_marshall_unmarshall():
-        read_file_response: ReadFileResponse = ReadFileResponse(reply_id=uuid4(), content=b"random content")
+        read_file_response: ReadFileResponse = ReadFileResponse(
+            reply_id=uuid4(), content=b"random content", modification_timestamp=123
+        )
         marshalled_data: bytes = read_file_response.marshall()
         unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
         assert unmarshalled_obj == read_file_response
 
     @staticmethod
     def test_marshall_unmarshall_without_type_info():
-        read_file_response: ReadFileResponse = ReadFileResponse(reply_id=uuid4(), content=b"random content")
+        read_file_response: ReadFileResponse = ReadFileResponse(
+            reply_id=uuid4(), content=b"random content", modification_timestamp=123
+        )
         marshalled_data: bytes = read_file_response._marshall_without_type_info()
         unmarshalled_obj: ReadFileResponse = ReadFileResponse._unmarshall_without_type_info(marshalled_data)
         assert unmarshalled_obj == read_file_response
@@ -100,14 +104,18 @@ class TestReadFileResponse:
 class TestWriteFileResponse:
     @staticmethod
     def test_marshall_unmarshall():
-        write_file_response: WriteFileResponse = WriteFileResponse(reply_id=uuid4(), is_successful=False)
+        write_file_response: WriteFileResponse = WriteFileResponse(
+            reply_id=uuid4(), is_successful=False, modification_timestamp=123
+        )
         marshalled_data: bytes = write_file_response.marshall()
         unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
         assert unmarshalled_obj == write_file_response
 
     @staticmethod
     def test_marshall_unmarshall_without_type_info():
-        write_file_response: WriteFileResponse = WriteFileResponse(reply_id=uuid4(), is_successful=False)
+        write_file_response: WriteFileResponse = WriteFileResponse(
+            reply_id=uuid4(), is_successful=False, modification_timestamp=123
+        )
         marshalled_data: bytes = write_file_response._marshall_without_type_info()
         unmarshalled_obj: WriteFileResponse = WriteFileResponse._unmarshall_without_type_info(marshalled_data)
         assert unmarshalled_obj == write_file_response
@@ -139,7 +147,7 @@ class TestUpdateNotification:
     @staticmethod
     def test_marshall_unmarshall():
         update_notification: UpdateNotification = UpdateNotification(
-            file_name="random_file.txt", content=b"hello world"
+            file_name="random_file.txt", content=b"hello world", modification_timestamp=123
         )
         marshalled_data: bytes = update_notification.marshall()
         unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
@@ -148,7 +156,7 @@ class TestUpdateNotification:
     @staticmethod
     def test_marshall_unmarshall_without_type_info():
         update_notification: UpdateNotification = UpdateNotification(
-            file_name="random_file.txt", content=b"hello world"
+            file_name="random_file.txt", content=b"hello world", modification_timestamp=123
         )
         marshalled_data: bytes = update_notification._marshall_without_type_info()
         unmarshalled_obj: UpdateNotification = UpdateNotification._unmarshall_without_type_info(marshalled_data)
