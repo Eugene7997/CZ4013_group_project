@@ -17,6 +17,8 @@ from remote_file_system.message import (
     SubscribeToUpdatesResponse,
     ModifiedTimestampRequest,
     ModifiedTimestampResponse,
+    DeleteFileRequest,
+    DeleteFileResponse,
 )
 from remote_file_system.server_interface import Server
 
@@ -112,3 +114,13 @@ def dispatch_message(server: Server, message: Message, client_ip_address: IPv4Ad
         )
         if not is_successful:
             logger.error(f"Server failed to check modification timestamp as {message.file_path} does not exist.")
+    elif isinstance(message, DeleteFileRequest):
+        is_successful = server.delete_file(file_name=message.file_name)
+        reply: DeleteFileResponse = DeleteFileResponse(reply_id=uuid4(), is_successful=is_successful)
+        send_message(
+            message=reply,
+            recipient_ip_address=client_ip_address,
+            recipient_port_number=client_port_number,
+            max_attempts_to_send_message=1,
+            timeout_in_seconds=5,
+        )

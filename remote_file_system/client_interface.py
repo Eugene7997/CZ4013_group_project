@@ -20,6 +20,8 @@ from remote_file_system.message import (
     UpdateNotification,
     ModifiedTimestampRequest,
     ModifiedTimestampResponse,
+    DeleteFileRequest,
+    DeleteFileResponse
 )
 
 
@@ -127,6 +129,22 @@ class Client:
             )
 
         return incoming_message.is_successful
+
+    def delete_file_in_server(self, file_name: Path) -> bytes:
+        # TODO: Implement delete file in client cache
+
+        outgoing_message: Message = DeleteFileRequest(request_id=uuid4(), filename=file_name)
+        incoming_message: DeleteFileResponse = send_message(
+            message=outgoing_message,
+            recipient_ip_address=self.server_ip_address,
+            recipient_port_number=self.server_port_number,
+            max_attempts_to_send_message=3,
+            timeout_in_seconds=5,
+        )
+        is_successful = incoming_message.is_successful
+        if is_successful is not True:
+            logger.error("Delete Failed. hehe")
+        return is_successful
 
     def subscribe_to_updates(self, file_name: str, monitoring_interval_in_seconds: int, file_name_length: int) -> None:
         outgoing_message: Message = SubscribeToUpdatesRequest(
