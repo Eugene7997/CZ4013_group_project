@@ -18,7 +18,7 @@ class TestServerInterface:
     def test_delete_file():
         server_file_directory = os.getcwd()
         f = open(f"{server_file_directory}/deleteme.txt", "w")
+        f.close()
+
         server = Server(server_root_directory=server_file_directory)
-        actual = server.delete_file("deleteme.txt")
-        expected = True
-        assert actual == expected
+        assert server.delete_file("deleteme.txt")
