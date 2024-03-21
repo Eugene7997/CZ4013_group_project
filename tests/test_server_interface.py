@@ -13,7 +13,7 @@ class TestServerInterface:
         actual = server.read_file("english_alphabets.txt")
         expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".encode("UTF-8")
         assert actual == expected
-    
+
     @staticmethod
     def test_delete_file():
         server_file_directory = os.getcwd()

@@ -21,7 +21,7 @@ from remote_file_system.message import (
     ModifiedTimestampRequest,
     ModifiedTimestampResponse,
     DeleteFileRequest,
-    DeleteFileResponse
+    DeleteFileResponse,
 )
 
 
