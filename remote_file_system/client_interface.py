@@ -142,7 +142,7 @@ class Client:
             timeout_in_seconds=5,
         )
         is_successful = incoming_message.is_successful
-        if is_successful is not True:
+        if not is_successful:
             logger.error("Delete Failed. hehe")
         return is_successful
 

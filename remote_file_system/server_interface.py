@@ -70,6 +70,5 @@ class Server:
         file_path = os.path.join(self.server_root_directory, file_name)
         if not os.path.exists(file_path):
             return False
-        else:
-            os.remove(file_path)
-            return True
+        os.remove(file_path)
+        return True
