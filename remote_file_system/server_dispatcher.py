@@ -17,6 +17,8 @@ from remote_file_system.message import (
     SubscribeToUpdatesResponse,
     ModifiedTimestampRequest,
     ModifiedTimestampResponse,
+    DeleteFileRequest,
+    DeleteFileResponse
 )
 from remote_file_system.server_interface import Server
 
@@ -81,7 +83,9 @@ def dispatch_message(server: Server, message: Message) -> Message:
         else:
             logger.error("File doesn't exist on server.")
             return ModifiedTimestampResponse(reply_id=uuid4(), modification_timestamp=data, is_successful=False)
-
+    elif isinstance(message, DeleteFileRequest):
+        is_successful = server.delete_file(file_name=message.file_name)
+        return DeleteFileResponse(reply_id=uuid4(), is_successful=is_successful)
 
 def send_update_notification(client_ip_address: IPv4Address, client_port_number: int, content: bytes):
     update_notification = UpdateNotification(

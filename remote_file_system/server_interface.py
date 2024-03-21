@@ -3,6 +3,7 @@ import time
 from collections import defaultdict
 from ipaddress import IPv4Address
 from typing import Dict, Tuple, List
+from loguru import logger
 
 
 class Server:
@@ -32,6 +33,14 @@ class Server:
             file.write(file_content)
 
         return True, self.subscribed_clients[file_name]
+
+    def delete_file(self, file_name: str) -> bool:
+        file_path = os.path.join(self.root_directory, file_name)
+        if not os.path.exists(file_path):
+            return False
+        else:
+            os.remove(file_path)
+            return True
 
     def get_modified_timestamp(self, file_path: str) -> Tuple[bool, int]:
         if not os.path.exists(file_path):
