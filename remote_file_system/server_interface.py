@@ -74,6 +74,7 @@ class Server:
             ip_address=client_ip_address,
             port_number=client_port_number,
         )
+        logger.info(f"subscribed_client: {self.subscribed_clients}")
         self.subscribed_clients[relative_file_path].append(subscribed_client)
         return True
 
