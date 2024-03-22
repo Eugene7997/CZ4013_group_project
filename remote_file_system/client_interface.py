@@ -104,7 +104,7 @@ class Client:
         if incoming_message.is_successful:
             return incoming_message.modification_timestamp
         else:
-            logger.error(f"Couldn't get modification timestamp")
+            logger.error("Couldn't get modification timestamp")
             # This returns None Type, is this already a success check?
             return incoming_message.modification_timestamp
 
