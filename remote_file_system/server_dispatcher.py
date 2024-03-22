@@ -20,7 +20,7 @@ from remote_file_system.message import (
     DeleteFileRequest,
     DeleteFileResponse,
 )
-from remote_file_system.server_interface import Server, SubscribedClient
+from remote_file_system.server_interface import Server
 
 
 def listen_for_messages(server: Server, server_ip_address: IPv4Address, server_port_number: int) -> None:
