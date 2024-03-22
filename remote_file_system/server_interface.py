@@ -18,7 +18,7 @@ class Server:
     def __init__(self, server_root_directory: str):
         # TODO change subscribed_client into a class or named tuple
         # added SubscribedClient class
-        self.subscribed_clients: Dict[str, List[SubscribedClient]] = defaultdict()
+        self.subscribed_clients: Dict[str, List[SubscribedClient]] = defaultdict(list)
         self.server_root_directory: str = server_root_directory
 
     def read_file(self, relative_file_path: str) -> bytes:
