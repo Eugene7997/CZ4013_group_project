@@ -49,12 +49,14 @@ class Client:
 
         if self._check_validity_on_client(file_path):
             # TODO: this is returning the entire file. Need splice to return offset stuff
-            return self.cache.get_file_content(file_path)
+            #just added offset numbers to return
+            return self.cache.get_file_content(file_path)[offset : offset + number_of_bytes]
 
         if self._check_validity_on_server(file_path):
             self.cache.validate_cache_for(file_path)
             # TODO: this is returning the entire file. Need splice to return offset stuff
-            return self.cache.get_file_content(file_path)
+            #just added offset numbers to return
+            return self.cache.get_file_content(file_path)[offset : offset + number_of_bytes]
 
         entire_file_content: bytes = self._get_file_from_server(file_path)
         desired_file_content = entire_file_content[offset : offset + number_of_bytes]
@@ -99,7 +101,14 @@ class Client:
             timeout_in_seconds=5,
         )
         # TODO add is_successful check
-        return incoming_message.modification_timestamp
+        if incoming_message.is_successful:
+            return incoming_message.modification_timestamp
+        else:
+            logger.error(f"Couldn't get modification timestamp")
+            # This returns None Type, is this already a success check?
+            return incoming_message.modification_timestamp
+
+
 
     def write_file(self, file_path: Path, offset: int, number_of_bytes: int, content: bytes):
         outgoing_message: Message = WriteFileRequest(

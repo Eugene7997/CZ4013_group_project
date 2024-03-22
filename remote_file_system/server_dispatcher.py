@@ -2,7 +2,7 @@ from ipaddress import IPv4Address
 from socket import socket, AF_INET, SOCK_DGRAM
 from typing import Tuple
 from uuid import uuid4
-
+import time
 from loguru import logger
 
 from remote_file_system.communications import send_message
@@ -20,7 +20,7 @@ from remote_file_system.message import (
     DeleteFileRequest,
     DeleteFileResponse,
 )
-from remote_file_system.server_interface import Server
+from remote_file_system.server_interface import Server, SubscribedClient
 
 
 def listen_for_messages(server: Server, server_ip_address: IPv4Address, server_port_number: int) -> None:
@@ -70,20 +70,23 @@ def dispatch_message(server: Server, message: Message, client_ip_address: IPv4Ad
         send_message(reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5)
 
         if is_successful:
+            curr_time = int(time.time())
             for subscribed_client in subscribed_clients:
-                monitoring_expiration_timestamp, client_ip_address, client_port_number = subscribed_client
                 # TODO send update notification below only if current time is before monitoring_expiration_timestamp
-
-                update_notification = UpdateNotification(
-                    file_name=message.file_name, content=message.content, modification_timestamp=modification_timestamp
-                )
-                send_message(
-                    message=update_notification,
-                    recipient_ip_address=client_ip_address,
-                    recipient_port_number=client_port_number,
-                    max_attempts_to_send_message=1,
-                    timeout_in_seconds=5,
-                )
+                # I am not sure about the delays between each subscribed client, so just put a curr time
+                if subscribed_client.monitoring_expiration_timestamp > curr_time:
+                    update_notification = UpdateNotification(
+                        file_name=message.file_name,
+                        content=message.content,
+                        modification_timestamp=modification_timestamp,
+                    )
+                    send_message(
+                        message=update_notification,
+                        recipient_ip_address=subscribed_client.ip_address,
+                        recipient_port_number=subscribed_client.port_number,
+                        max_attempts_to_send_message=1,
+                        timeout_in_seconds=5,
+                    )
     elif isinstance(message, SubscribeToUpdatesRequest):
         isSuccessful: bool = server.subscribe_to_updates(
             client_ip_address=message.client_ip_address,
