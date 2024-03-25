@@ -48,13 +48,11 @@ class Client:
             return desired_file_content
 
         if self._check_validity_on_client(file_path):
-            # TODO: this is returning the entire file. Need splice to return offset stuff
-            return self.cache.get_file_content(file_path)
+            return self.cache.get_file_content(file_path)[offset : offset + number_of_bytes]
 
         if self._check_validity_on_server(file_path):
             self.cache.validate_cache_for(file_path)
-            # TODO: this is returning the entire file. Need splice to return offset stuff
-            return self.cache.get_file_content(file_path)
+            return self.cache.get_file_content(file_path)[offset : offset + number_of_bytes]
 
         entire_file_content: bytes = self._get_file_from_server(file_path)
         desired_file_content = entire_file_content[offset : offset + number_of_bytes]
@@ -98,8 +96,11 @@ class Client:
             max_attempts_to_send_message=3,
             timeout_in_seconds=5,
         )
-        # TODO add is_successful check
-        return incoming_message.modification_timestamp
+        if incoming_message.is_successful:
+            return incoming_message.modification_timestamp
+        else:
+            logger.error("Couldn't get modification timestamp")
+            return incoming_message.modification_timestamp
 
     def write_file(self, file_path: Path, offset: int, number_of_bytes: int, content: bytes):
         outgoing_message: Message = WriteFileRequest(

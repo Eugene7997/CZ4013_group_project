@@ -7,10 +7,16 @@ from typing import Dict, Tuple, List
 from loguru import logger
 
 
+class SubscribedClient:
+    def __init__(self, monitoring_expiration_timestamp: int, ip_address: IPv4Address, port_number: int):
+        self.monitoring_expiration_timestamp = monitoring_expiration_timestamp
+        self.ip_address = ip_address
+        self.port_number = port_number
+
+
 class Server:
     def __init__(self, server_root_directory: str):
-        # TODO change subscribed_client into a class or named tuple
-        self.subscribed_clients: Dict[str, List[Tuple[int, IPv4Address, int]]] = defaultdict(list)
+        self.subscribed_clients: Dict[str, List[SubscribedClient]] = defaultdict(list)
         self.server_root_directory: str = server_root_directory
 
     def read_file(self, relative_file_path: str) -> bytes:
@@ -24,7 +30,9 @@ class Server:
             file_contents = file.read()
             return file_contents
 
-    def write_file(self, relative_file_path: str, offset: int, file_content: bytes) -> List[Tuple[IPv4Address, int]]:
+    def write_file(
+        self, relative_file_path: str, offset: int, file_content: bytes
+    ) -> Tuple[bool, List[SubscribedClient]]:
         full_file_path = os.path.join(self.server_root_directory, relative_file_path)
 
         if not os.path.exists(full_file_path):
@@ -58,11 +66,13 @@ class Server:
     ) -> bool:
         current_timestamp: int = int(time.time())
         monitoring_expiration_timestamp: int = current_timestamp + monitoring_interval_in_seconds
-        subscribed_client: Tuple[int, IPv4Address, int] = (
-            monitoring_expiration_timestamp,
-            client_ip_address,
-            client_port_number,
+
+        subscribed_client: SubscribedClient = SubscribedClient(
+            monitoring_expiration_timestamp=monitoring_expiration_timestamp,
+            ip_address=client_ip_address,
+            port_number=client_port_number,
         )
+        logger.info(f"subscribed_client: {self.subscribed_clients}")
         self.subscribed_clients[relative_file_path].append(subscribed_client)
         return True
 
