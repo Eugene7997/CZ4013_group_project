@@ -1,6 +1,7 @@
 import socket
 from ipaddress import IPv4Address
 from typing import Optional, Tuple
+
 from loguru import logger
 
 from remote_file_system.message import Message
@@ -22,7 +23,7 @@ def send_message(
     logger.debug(f"Socket opened at {sender_ip_address}:{sender_port_number}.")
 
     outgoing_bytes: bytes = message.marshall()
-    incoming_bytes: bytes = None
+    incoming_bytes: Optional[bytes] = None
 
     recipient_address: Tuple[str, int] = str(recipient_ip_address), recipient_port_number
 
