@@ -3,6 +3,7 @@ import time
 from collections import defaultdict
 from ipaddress import IPv4Address
 from typing import Dict, Tuple, List
+from typing import Optional
 
 from loguru import logger
 
@@ -19,7 +20,7 @@ class Server:
         self.subscribed_clients: Dict[str, List[SubscribedClient]] = defaultdict(list)
         self.server_root_directory: str = server_root_directory
 
-    def read_file(self, relative_file_path: str) -> bytes:
+    def read_file(self, relative_file_path: str) -> Optional[bytes]:
         full_file_path = os.path.join(self.server_root_directory, relative_file_path)
 
         if not os.path.exists(full_file_path):
@@ -32,7 +33,7 @@ class Server:
 
     def write_file(
         self, relative_file_path: str, offset: int, file_content: bytes
-    ) -> Tuple[bool, List[SubscribedClient]]:
+    ) -> Tuple[bool, Optional[List[SubscribedClient]]]:
         full_file_path = os.path.join(self.server_root_directory, relative_file_path)
 
         if not os.path.exists(full_file_path):
@@ -45,7 +46,7 @@ class Server:
 
         return True, self.subscribed_clients[relative_file_path]
 
-    def get_modified_timestamp(self, relative_file_path: str) -> Tuple[bool, int]:
+    def get_modified_timestamp(self, relative_file_path: str) -> Tuple[bool, Optional[int]]:
         full_file_path = os.path.join(self.server_root_directory, relative_file_path)
 
         if not os.path.exists(full_file_path):
