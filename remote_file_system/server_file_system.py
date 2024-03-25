@@ -2,6 +2,7 @@ import os
 import time
 from collections import defaultdict
 from ipaddress import IPv4Address
+from pathlib import Path
 from typing import Dict, Tuple, List
 from typing import Optional
 
@@ -15,10 +16,10 @@ class SubscribedClient:
         self.port_number = port_number
 
 
-class Server:
-    def __init__(self, server_root_directory: str):
+class ServerFileSystem:
+    def __init__(self, server_root_directory: Path):
         self.subscribed_clients: Dict[str, List[SubscribedClient]] = defaultdict(list)
-        self.server_root_directory: str = server_root_directory
+        self.server_root_directory: Path = server_root_directory
 
     def read_file(self, relative_file_path: str) -> Optional[bytes]:
         full_file_path = os.path.join(self.server_root_directory, relative_file_path)
