@@ -69,7 +69,7 @@ class Client:
         return cache_modification_timestamp == server_modification_timestamp
 
     def _get_file_from_server(self, file_path: Path) -> bytes:
-        outgoing_message: Message = ReadFileRequest(request_id=uuid4(), filename=file_path)
+        outgoing_message: Message = ReadFileRequest(request_id=uuid4(), filename=str(file_path))
         incoming_message: ReadFileResponse = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
@@ -88,7 +88,7 @@ class Client:
         return entire_file_content
 
     def _get_modification_timestamp_from_server(self, file_path: Path) -> int:
-        outgoing_message: Message = ModifiedTimestampRequest(request_id=uuid4(), file_path=file_path)
+        outgoing_message: Message = ModifiedTimestampRequest(request_id=uuid4(), file_path=str(file_path))
         incoming_message: ModifiedTimestampResponse = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
@@ -104,7 +104,7 @@ class Client:
 
     def write_file(self, file_path: Path, offset: int, number_of_bytes: int, content: bytes):
         outgoing_message: Message = WriteFileRequest(
-            request_id=uuid4(), offset=offset, file_name=file_path, content=content
+            request_id=uuid4(), offset=offset, file_name=str(file_path), content=content
         )
         incoming_message: WriteFileResponse = send_message(
             message=outgoing_message,
@@ -134,7 +134,7 @@ class Client:
     def delete_file_in_server(self, file_name: Path) -> bytes:
         # TODO: Implement delete file in client cache
 
-        outgoing_message: Message = DeleteFileRequest(request_id=uuid4(), filename=file_name)
+        outgoing_message: Message = DeleteFileRequest(request_id=uuid4(), filename=str(file_name))
         incoming_message: DeleteFileResponse = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,

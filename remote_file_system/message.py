@@ -43,7 +43,7 @@ class Message(ABC):
         pass
 
 
-# Client
+# TODO for all subclasses of Message, standardise the name of the argument with `file_path` of `Path` type not `str`
 @Message.register_subclass(class_id=1)
 class ReadFileRequest(Message):
     def __init__(self, request_id: UUID, filename: str):
