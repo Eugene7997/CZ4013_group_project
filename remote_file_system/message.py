@@ -163,7 +163,7 @@ class SubscribeToUpdatesRequest(Message):
 # Server
 @Message.register_subclass(class_id=4)
 class ReadFileResponse(Message):
-    def __init__(self, reply_id: int, content: bytes, modification_timestamp: int):
+    def __init__(self, reply_id: UUID, content: bytes, modification_timestamp: int):
         self.reply_id: UUID = reply_id
         self.modification_timestamp: int = modification_timestamp
         self.content: bytes = content
@@ -365,7 +365,7 @@ class DeleteFileRequest(Message):
 
 @Message.register_subclass(class_id=11)
 class DeleteFileResponse(Message):
-    def __init__(self, reply_id: int, is_successful: bool):
+    def __init__(self, reply_id: UUID, is_successful: bool):
         self.reply_id: UUID = reply_id
         self.is_successful: bool = is_successful
 
