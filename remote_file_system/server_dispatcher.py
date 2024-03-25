@@ -26,8 +26,9 @@ from remote_file_system.server_interface import Server
 def listen_for_messages(server: Server, server_ip_address: IPv4Address, server_port_number: int) -> None:
     sock = socket(AF_INET, SOCK_DGRAM)
     server_address: Tuple[str, int] = (str(server_ip_address), server_port_number)
+    print("function reached")
     sock.bind(server_address)
-
+    print("hfsduibrefgiwuefbiwuesfsa")
     try:
         while True:
             logger.info(f"Socket is listening for messages at {server_ip_address}:{server_port_number}.")
@@ -72,8 +73,6 @@ def dispatch_message(server: Server, message: Message, client_ip_address: IPv4Ad
         if is_successful:
             curr_time = int(time.time())
             for subscribed_client in subscribed_clients:
-                # TODO send update notification below only if current time is before monitoring_expiration_timestamp
-                # I am not sure about the delays between each subscribed client, so just put a curr time
                 if subscribed_client.monitoring_expiration_timestamp > curr_time:
                     update_notification = UpdateNotification(
                         file_name=message.file_name,

@@ -19,6 +19,7 @@ class TestClientServer:
         server_process = multiprocessing.Process(
             target=listen_for_messages, args=(server, self.SERVER_IP_ADDRESS, self.SERVER_PORT_NUMBER)
         )
+
         server_process.start()
         yield
         server_process.terminate()
