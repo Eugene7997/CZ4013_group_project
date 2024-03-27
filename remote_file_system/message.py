@@ -387,3 +387,67 @@ class DeleteFileResponse(Message):
             and self.reply_id == other.reply_id
             and self.is_successful == other.is_successful
         )
+
+
+@Message.register_subclass(class_id=12)
+class AppendFileRequest(Message):
+    def __init__(self, request_id: UUID, file_name: str, content: bytes):
+        self.request_id: UUID = request_id
+        self.file_name: str = file_name
+        self.content: bytes = content
+
+    def _marshall_without_type_info(self) -> bytes:
+        byte_id: bytes = self.request_id.bytes
+        byte_filename: bytearray = bytearray(self.file_name, encoding="utf-8")
+        byte_filename_length: bytes = (len(byte_filename)).to_bytes(4, "big")
+        byte_content: bytes = self.content
+
+        marshalled_content = byte_id + byte_filename_length + byte_filename + byte_content
+        return marshalled_content
+
+    @staticmethod
+    def _unmarshall_without_type_info(content: bytes) -> "AppendFileRequest":
+        request_id: UUID = UUID(bytes=content[0:16])
+        filename_length = int.from_bytes(content[16:20], "big")
+        filename = content[20 : 20 + filename_length].decode("utf-8")
+        file_content = content[20 + filename_length :]
+
+        return AppendFileRequest(request_id, filename, file_content)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, AppendFileRequest)
+            and self.request_id == other.request_id
+            and self.file_name == other.file_name
+            and self.content == other.content
+        )
+
+
+@Message.register_subclass(class_id=13)
+class AppendFileResponse(Message):
+    def __init__(self, reply_id: UUID, is_successful: bool, modification_timestamp=None):
+        self.reply_id: UUID = reply_id
+        self.is_successful: bool = is_successful
+        self.modification_timestamp: int = modification_timestamp
+
+    def _marshall_without_type_info(self) -> bytes:
+        byte_id: bytes = self.reply_id.bytes
+        byte_success: bytes = int(self.is_successful).to_bytes(1, "big")
+        modification_timestamp: bytes = self.modification_timestamp.to_bytes(4, "big")
+        marshalled_content = byte_id + byte_success + modification_timestamp
+        return marshalled_content
+
+    @staticmethod
+    def _unmarshall_without_type_info(content: bytes) -> "AppendFileResponse":
+        reply_id = UUID(bytes=content[0:16])
+        is_successful = bool(int.from_bytes(content[16:17], "big"))
+        modification_timestamp = int.from_bytes(content[17:], "big")
+        return AppendFileResponse(reply_id, is_successful, modification_timestamp)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, AppendFileResponse)
+            and self.reply_id == other.reply_id
+            and self.is_successful == other.is_successful
+            and self.modification_timestamp == other.modification_timestamp
+        )

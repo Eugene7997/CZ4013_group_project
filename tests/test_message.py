@@ -15,6 +15,8 @@ from remote_file_system.message import (
     ModifiedTimestampResponse,
     DeleteFileRequest,
     DeleteFileResponse,
+    AppendFileRequest,
+    AppendFileResponse,
 )
 
 
@@ -238,3 +240,43 @@ class TestDeleteFileResponse:
         marshalled_data: bytes = delete_file_response._marshall_without_type_info()
         unmarshalled_obj: DeleteFileResponse = DeleteFileResponse._unmarshall_without_type_info(marshalled_data)
         assert unmarshalled_obj == delete_file_response
+
+
+class TestAppendFileRequest:
+    @staticmethod
+    def test_marshall_unmarshall():
+        append_file_request: AppendFileRequest = AppendFileRequest(
+            request_id=uuid4(), file_name="random_file", content=b"random_file_content"
+        )
+        marshalled_data: bytes = append_file_request.marshall()
+        unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
+        assert unmarshalled_obj == append_file_request
+
+    @staticmethod
+    def test_marshall_unmarshall_without_type_info():
+        append_file_request: AppendFileRequest = AppendFileRequest(
+            request_id=uuid4(), file_name="random_file", content=b"random_file_content"
+        )
+        marshalled_data: bytes = append_file_request._marshall_without_type_info()
+        unmarshalled_obj: AppendFileRequest = AppendFileRequest._unmarshall_without_type_info(marshalled_data)
+        assert unmarshalled_obj == append_file_request
+
+
+class TestAppendFileResponse:
+    @staticmethod
+    def test_marshall_unmarshall():
+        append_file_response: AppendFileResponse = AppendFileResponse(
+            reply_id=uuid4(), is_successful=False, modification_timestamp=123
+        )
+        marshalled_data: bytes = append_file_response.marshall()
+        unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
+        assert unmarshalled_obj == append_file_response
+
+    @staticmethod
+    def test_marshall_unmarshall_without_type_info():
+        append_file_response: AppendFileResponse = AppendFileResponse(
+            reply_id=uuid4(), is_successful=False, modification_timestamp=123
+        )
+        marshalled_data: bytes = append_file_response._marshall_without_type_info()
+        unmarshalled_obj: AppendFileResponse = AppendFileResponse._unmarshall_without_type_info(marshalled_data)
+        assert unmarshalled_obj == append_file_response
