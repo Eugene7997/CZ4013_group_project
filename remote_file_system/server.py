@@ -20,6 +20,8 @@ from remote_file_system.message import (
     ModifiedTimestampResponse,
     DeleteFileRequest,
     DeleteFileResponse,
+    AppendFileRequest,
+    AppendFileResponse,
 )
 from remote_file_system.server_file_system import ServerFileSystem
 
@@ -137,3 +139,34 @@ class Server:
                 max_attempts_to_send_message=1,
                 timeout_in_seconds=5,
             )
+        elif isinstance(message, AppendFileRequest):
+            is_successful, subscribed_clients = self.server_file_system.append_file(
+                relative_file_path=message.file_name, file_content=message.content
+            )
+            is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(message.file_name)
+
+            reply: AppendFileResponse = AppendFileResponse(
+                reply_id=uuid4(), is_successful=is_successful, modification_timestamp=modification_timestamp
+            )
+            send_message(
+                reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5
+            )
+
+            if is_successful:
+                curr_time = int(time.time())
+                for subscribed_client in subscribed_clients:
+                    # TODO send update notification below only if current time is before monitoring_expiration_timestamp
+                    # I am not sure about the delays between each subscribed client, so just put a curr time
+                    if subscribed_client.monitoring_expiration_timestamp > curr_time:
+                        update_notification = UpdateNotification(
+                            file_name=message.file_name,
+                            content=message.content,
+                            modification_timestamp=modification_timestamp,
+                        )
+                        send_message(
+                            message=update_notification,
+                            recipient_ip_address=subscribed_client.ip_address,
+                            recipient_port_number=subscribed_client.port_number,
+                            max_attempts_to_send_message=1,
+                            timeout_in_seconds=5,
+                        )

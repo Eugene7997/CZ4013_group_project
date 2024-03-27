@@ -23,6 +23,19 @@ class Cache:
         self.validation_timestamps[file_path] = validation_timestamp
         self.modification_timestamps[file_path] = modification_timestamp
 
+    def update_cache_after_write(self, file_path: Path, offset: int, file_content: bytes) -> None:
+        full_file_path = self.cache_working_directory.joinpath(file_path)
+        full_file_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(full_file_path, "wb") as file:
+            file.seek(offset)
+            file.write(file_content)
+
+    def update_cache_after_append(self, file_path: Path, file_content: bytes) -> None:
+        full_file_path = self.cache_working_directory.joinpath(file_path)
+        full_file_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(full_file_path, "ab") as file:
+            file.write(file_content)
+
     def get_file_content(self, file_path: Path) -> bytes:
         full_file_path = self.cache_working_directory.joinpath(file_path)
         with open(full_file_path, "rb") as file:
