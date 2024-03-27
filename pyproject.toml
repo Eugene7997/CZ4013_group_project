@@ -11,6 +11,7 @@ flake8 = "^7.0.0"
 pytest = "^8.0.2"
 black = "^24.2.0"
 loguru = "^0.7.2"
+coverage = "^7.4.4"
 
 
 [build-system]
