@@ -71,8 +71,6 @@ class Client:
 
     def _get_file_from_server(self, file_path: Path) -> bytes:
         outgoing_message: Message = ReadFileRequest(request_id=uuid4(), filename=str(file_path))
-        # For testing only
-        # outgoing_message: Message = ReadFileRequest(request_id=UUID(int=0x12345678123456781234567812345678), filename=str(file_path))
         incoming_message: ReadFileResponse | None = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
