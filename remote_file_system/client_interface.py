@@ -22,6 +22,8 @@ from remote_file_system.message import (
     ModifiedTimestampResponse,
     DeleteFileRequest,
     DeleteFileResponse,
+    AppendFileRequest,
+    AppendFileResponse,
 )
 
 
@@ -34,7 +36,7 @@ class Client:
         cache_working_directory: Path,
         freshness_interval_in_seconds: int,
     ):
-        self.client_ip_address: IPv4Address = gethostbyname(gethostname())
+        self.client_ip_address: IPv4Address = IPv4Address(gethostbyname(gethostname()))
         self.client_port_number: int = client_port_number
         self.server_ip_address: IPv4Address = server_ip_address
         self.server_port_number: int = server_port_number
@@ -70,7 +72,7 @@ class Client:
 
     def _get_file_from_server(self, file_path: Path) -> bytes:
         outgoing_message: Message = ReadFileRequest(request_id=uuid4(), filename=str(file_path))
-        incoming_message: ReadFileResponse = send_message(
+        incoming_message: ReadFileResponse | None = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
@@ -89,7 +91,7 @@ class Client:
 
     def _get_modification_timestamp_from_server(self, file_path: Path) -> int:
         outgoing_message: Message = ModifiedTimestampRequest(request_id=uuid4(), file_path=str(file_path))
-        incoming_message: ModifiedTimestampResponse = send_message(
+        incoming_message: ModifiedTimestampResponse | None = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
@@ -106,7 +108,7 @@ class Client:
         outgoing_message: Message = WriteFileRequest(
             request_id=uuid4(), offset=offset, file_name=str(file_path), content=content
         )
-        incoming_message: WriteFileResponse = send_message(
+        incoming_message: WriteFileResponse | None = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
@@ -121,12 +123,34 @@ class Client:
             return
 
         if self.cache.is_in_cache(file_path=file_path):
-            server_modification_timestamp: int = incoming_message.modification_timestamp
-            self.cache.put_in_cache(
+            self.cache.update_cache_after_write(
+                file_path=Path(file_path),
+                offset=offset,
+                file_content=content,
+            )
+
+        return incoming_message.is_successful
+
+    def append_file(self, file_path: Path, content: bytes):
+        outgoing_message: Message = AppendFileRequest(request_id=uuid4(), file_name=str(file_path), content=content)
+        incoming_message: AppendFileResponse | None = send_message(
+            message=outgoing_message,
+            recipient_ip_address=self.server_ip_address,
+            recipient_port_number=self.server_port_number,
+            max_attempts_to_send_message=3,
+            timeout_in_seconds=5,
+        )
+        if not incoming_message:
+            logger.error("Server did not respond to a Append File operation.")
+            return
+        if not incoming_message.is_successful:
+            logger.error("Server responded that the Append File operation is not successful.")
+            return
+
+        if self.cache.is_in_cache(file_path=file_path):
+            self.cache.update_cache_after_append(
                 file_path=Path(file_path),
                 file_content=content,
-                validation_timestamp=int(time.time()),
-                modification_timestamp=server_modification_timestamp,
             )
 
         return incoming_message.is_successful
@@ -135,7 +159,7 @@ class Client:
         # TODO: Implement delete file in client cache
 
         outgoing_message: Message = DeleteFileRequest(request_id=uuid4(), filename=str(file_name))
-        incoming_message: DeleteFileResponse = send_message(
+        incoming_message: DeleteFileResponse | None = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
@@ -155,7 +179,7 @@ class Client:
             file_name=file_name,
             monitoring_interval_in_seconds=monitoring_interval_in_seconds,
         )
-        incoming_message: SubscribeToUpdatesResponse = send_message(
+        incoming_message: SubscribeToUpdatesResponse | None = send_message(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,

@@ -84,3 +84,17 @@ class ServerFileSystem:
             return False
         os.remove(file_path)
         return True
+
+    def append_file(
+        self, relative_file_path: str, file_content: bytes
+    ) -> Tuple[bool, Optional[List[SubscribedClient]]]:
+        full_file_path = os.path.join(self.server_root_directory, relative_file_path)
+
+        if not os.path.exists(full_file_path):
+            logger.warning(f"Server failed to perform a write file operation as no file exists at {full_file_path}")
+            return False, None
+
+        with open(full_file_path, "ab") as file:
+            file.write(file_content)
+
+        return True, self.subscribed_clients[relative_file_path]
