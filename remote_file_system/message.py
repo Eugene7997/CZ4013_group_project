@@ -116,12 +116,14 @@ class WriteFileRequest(Message):
 class SubscribeToUpdatesRequest(Message):
     def __init__(
         self,
+        request_id: UUID,
         client_ip_address: IPv4Address,
         client_port_number: int,
         monitoring_interval_in_seconds: int,
         file_name_length: int,
         file_name: str,
     ):
+        self.request_id: UUID = request_id
         self.client_ip_address: IPv4Address = client_ip_address
         self.client_port_number: int = client_port_number
         self.monitoring_interval: int = monitoring_interval_in_seconds
@@ -129,29 +131,32 @@ class SubscribeToUpdatesRequest(Message):
         self.file_name: str = file_name
 
     def _marshall_without_type_info(self) -> bytes:
+        byte_id: bytes = self.request_id.bytes
         client_ip_address: bytes = socket.inet_aton(str(self.client_ip_address))
         client_port_number: bytes = self.client_port_number.to_bytes(4, "big")
         monitoring_interval: bytes = self.monitoring_interval.to_bytes(4, "big")
         file_name_length: bytes = self.file_name_length.to_bytes(4, "big")
         file_name: bytearray = bytearray(self.file_name, encoding="utf-8")
 
-        return client_ip_address + client_port_number + monitoring_interval + file_name_length + file_name
+        return byte_id + client_ip_address + client_port_number + monitoring_interval + file_name_length + file_name
 
     @staticmethod
     def _unmarshall_without_type_info(content: bytes) -> "SubscribeToUpdatesRequest":
-        client_ip_address: IPv4Address = IPv4Address(socket.inet_ntoa(content[0:4]))
-        client_port_number: int = int.from_bytes(content[4:8], "big")
-        monitoring_interval: int = int.from_bytes(content[8:12], "big")
-        filename_length: int = int.from_bytes(content[12:16], "big")
-        file_name: str = content[16 : 16 + filename_length].decode("utf-8")
+        request_id: UUID = UUID(bytes=content[0:16])
+        client_ip_address: IPv4Address = IPv4Address(socket.inet_ntoa(content[16:20]))
+        client_port_number: int = int.from_bytes(content[20:24], "big")
+        monitoring_interval: int = int.from_bytes(content[24:28], "big")
+        filename_length: int = int.from_bytes(content[28:32], "big")
+        file_name: str = content[32 : 32 + filename_length].decode("utf-8")
 
         return SubscribeToUpdatesRequest(
-            client_ip_address, client_port_number, monitoring_interval, filename_length, file_name
+            request_id, client_ip_address, client_port_number, monitoring_interval, filename_length, file_name
         )
 
     def __eq__(self, other):
         return (
             isinstance(other, SubscribeToUpdatesRequest)
+            and self.request_id == other.request_id
             and self.client_ip_address == other.client_ip_address
             and self.client_port_number == other.client_port_number
             and self.monitoring_interval == other.monitoring_interval
@@ -160,8 +165,33 @@ class SubscribeToUpdatesRequest(Message):
         )
 
 
-# Server
 @Message.register_subclass(class_id=4)
+class SubscribeToUpdatesResponse(Message):
+    def __init__(self, reply_id: UUID, is_successful: bool):
+        self.reply_id: UUID = reply_id
+        self.is_successful: bool = is_successful
+
+    def _marshall_without_type_info(self) -> bytes:
+        byte_id: bytes = self.reply_id.bytes
+        byte_success: bytes = int(self.is_successful).to_bytes(1, "big")
+        marshalled_content = byte_id + byte_success
+        return marshalled_content
+
+    @staticmethod
+    def _unmarshall_without_type_info(content: bytes) -> "SubscribeToUpdatesResponse":
+        reply_id = UUID(bytes=content[0:16])
+        is_successful = bool(int.from_bytes(content[16:], "big"))
+        return SubscribeToUpdatesResponse(reply_id, is_successful)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, SubscribeToUpdatesResponse)
+            and self.reply_id == other.reply_id
+            and self.is_successful == other.is_successful
+        )
+
+
+@Message.register_subclass(class_id=5)
 class ReadFileResponse(Message):
     def __init__(self, reply_id: UUID, content: bytes, modification_timestamp: int):
         self.reply_id: UUID = reply_id
@@ -190,7 +220,7 @@ class ReadFileResponse(Message):
         )
 
 
-@Message.register_subclass(class_id=5)
+@Message.register_subclass(class_id=6)
 class WriteFileResponse(Message):
     def __init__(self, reply_id: UUID, is_successful: bool, modification_timestamp=None):
         self.reply_id: UUID = reply_id
@@ -217,32 +247,6 @@ class WriteFileResponse(Message):
             and self.reply_id == other.reply_id
             and self.is_successful == other.is_successful
             and self.modification_timestamp == other.modification_timestamp
-        )
-
-
-@Message.register_subclass(class_id=6)
-class SubscribeToUpdatesResponse(Message):
-    def __init__(self, reply_id: UUID, is_successful: bool):
-        self.reply_id: UUID = reply_id
-        self.is_successful: bool = is_successful
-
-    def _marshall_without_type_info(self) -> bytes:
-        byte_id: bytes = self.reply_id.bytes
-        byte_success: bytes = int(self.is_successful).to_bytes(1, "big")
-        marshalled_content = byte_id + byte_success
-        return marshalled_content
-
-    @staticmethod
-    def _unmarshall_without_type_info(content: bytes) -> "SubscribeToUpdatesResponse":
-        reply_id = UUID(bytes=content[0:16])
-        is_successful = bool(int.from_bytes(content[16:], "big"))
-        return SubscribeToUpdatesResponse(reply_id, is_successful)
-
-    def __eq__(self, other):
-        return (
-            isinstance(other, SubscribeToUpdatesResponse)
-            and self.reply_id == other.reply_id
-            and self.is_successful == other.is_successful
         )
 
 

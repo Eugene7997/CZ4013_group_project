@@ -60,6 +60,7 @@ class TestSubscribeToUpdatesRequest:
     @staticmethod
     def test_marshall_unmarshall():
         subscribe_request: SubscribeToUpdatesRequest = SubscribeToUpdatesRequest(
+            request_id=uuid4(),
             client_ip_address=IPv4Address("192.168.255.255"),
             client_port_number=123,
             monitoring_interval_in_seconds=15,
@@ -73,6 +74,7 @@ class TestSubscribeToUpdatesRequest:
     @staticmethod
     def test_marshall_unmarshall_without_type_info():
         subscribe_request: SubscribeToUpdatesRequest = SubscribeToUpdatesRequest(
+            request_id=uuid4(),
             client_ip_address=IPv4Address("192.168.255.255"),
             client_port_number=123,
             monitoring_interval_in_seconds=15,
