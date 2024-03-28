@@ -73,7 +73,7 @@ class Server:
                 reply: ReadFileResponse = ReadFileResponse(
                     reply_id=uuid4(), content=content, modification_timestamp=modification_timestamp
                 )
-                self._add_message_to_history(reply)
+                self._add_message_to_history(message.request_id, reply)
             send_message(
                 reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5
             )
@@ -95,6 +95,7 @@ class Server:
                 reply: WriteFileResponse = WriteFileResponse(
                     reply_id=uuid4(), is_successful=is_successful, modification_timestamp=modification_timestamp
                 )
+                self._add_message_to_history(message.request_id, reply)
                 send_message(
                     reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5
                 )
@@ -134,6 +135,7 @@ class Server:
                 reply: SubscribeToUpdatesResponse = SubscribeToUpdatesResponse(
                     is_successful=isSuccessful, reply_id=uuid4()
                 )
+                self._add_message_to_history(message.request_id, reply)
             send_message(
                 message=reply,
                 recipient_ip_address=client_ip_address,
@@ -153,6 +155,7 @@ class Server:
                 reply: ModifiedTimestampResponse = ModifiedTimestampResponse(
                     reply_id=uuid4(), modification_timestamp=modification_timestamp, is_successful=is_successful
                 )
+                self._add_message_to_history(message.request_id, reply)
                 if not is_successful:
                     logger.error(
                         f"Server failed to check modification timestamp as {message.file_path} does not exist."
@@ -173,6 +176,7 @@ class Server:
             else:
                 is_successful = self.server_file_system.delete_file(file_name=message.file_name)
                 reply: DeleteFileResponse = DeleteFileResponse(reply_id=uuid4(), is_successful=is_successful)
+                self._add_message_to_history(message.request_id, reply)
             send_message(
                 message=reply,
                 recipient_ip_address=client_ip_address,
@@ -199,6 +203,7 @@ class Server:
                 reply: AppendFileResponse = AppendFileResponse(
                     reply_id=uuid4(), is_successful=is_successful, modification_timestamp=modification_timestamp
                 )
+                self._add_message_to_history(message.request_id, reply)
                 send_message(
                     reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5
                 )
