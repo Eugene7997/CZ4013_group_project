@@ -3,7 +3,7 @@ from ipaddress import IPv4Address
 from pathlib import Path
 from socket import socket, AF_INET, SOCK_DGRAM, gethostbyname, gethostname, timeout
 from typing import Tuple
-from uuid import uuid4, UUID
+from uuid import uuid4
 from loguru import logger
 
 from remote_file_system.client_cache import Cache
