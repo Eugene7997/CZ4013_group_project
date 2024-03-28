@@ -3,7 +3,7 @@ from ipaddress import IPv4Address
 from socket import socket, AF_INET, SOCK_DGRAM
 from typing import Dict, Tuple, List, Optional
 from collections import defaultdict
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from loguru import logger
 
@@ -33,7 +33,7 @@ class Server:
         self.server_port_number: int = server_port_number
         self.server_file_system: ServerFileSystem = file_system
         # store request id as key. value is the Message
-        self.message_history: Dict[uuid4, Message] = defaultdict(list)
+        self.message_history: Dict[UUID, Message] = {}
 
     def listen_for_messages(self) -> None:
         sock = socket(AF_INET, SOCK_DGRAM)
