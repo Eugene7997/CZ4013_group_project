@@ -1,8 +1,7 @@
 import time
 from ipaddress import IPv4Address
 from socket import socket, AF_INET, SOCK_DGRAM
-from typing import Dict, Tuple, List, Optional
-from collections import defaultdict
+from typing import Dict, Tuple
 from uuid import uuid4, UUID
 
 from loguru import logger
@@ -68,12 +67,10 @@ class Server:
                 reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5
             )
             return
-        
+
         if isinstance(message, ReadFileRequest):
             content: bytes = self.server_file_system.read_file(relative_file_path=message.file_name)
-            is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(
-                message.file_name
-            )
+            is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(message.file_name)
             reply: ReadFileResponse = ReadFileResponse(
                 reply_id=uuid4(), content=content, modification_timestamp=modification_timestamp
             )
@@ -85,9 +82,7 @@ class Server:
             is_successful, subscribed_clients = self.server_file_system.write_file(
                 relative_file_path=message.file_name, offset=message.offset, file_content=message.content
             )
-            is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(
-                message.file_name
-            )
+            is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(message.file_name)
             reply: WriteFileResponse = WriteFileResponse(
                 reply_id=uuid4(), is_successful=is_successful, modification_timestamp=modification_timestamp
             )
@@ -98,10 +93,12 @@ class Server:
             if is_successful:
                 curr_time = int(time.time())
                 for subscribed_client in subscribed_clients:
-                    # TODO: send update notification below only if current time is before monitoring_expiration_timestamp
-                    # I am not sure about the delays between each subscribed client, so just put a curr time
+                    # TODO: send update notification below only if
+                    #       current time is before monitoring_expiration_timestamp
+                    #       I am not sure about the delays between each subscribed client, so just put a curr time
 
-                    # TODO: I am not sure if at most one invocation semantics applies here. I will skip the implementation of it for now.
+                    # TODO: I am not sure if at most one invocation semantics applies here.
+                    #       I will skip the implementation of it for now.
 
                     if subscribed_client.monitoring_expiration_timestamp > curr_time:
                         update_notification = UpdateNotification(
@@ -123,9 +120,7 @@ class Server:
                 monitoring_interval_in_seconds=message.monitoring_interval,
                 relative_file_path=message.file_name,
             )
-            reply: SubscribeToUpdatesResponse = SubscribeToUpdatesResponse(
-                is_successful=isSuccessful, reply_id=uuid4()
-            )
+            reply: SubscribeToUpdatesResponse = SubscribeToUpdatesResponse(is_successful=isSuccessful, reply_id=uuid4())
             self._add_message_to_history(message.request_id, reply)
             send_message(
                 message=reply,
@@ -143,9 +138,7 @@ class Server:
             )
             self._add_message_to_history(message.request_id, reply)
             if not is_successful:
-                logger.error(
-                    f"Server failed to check modification timestamp as {message.file_path} does not exist."
-                )
+                logger.error(f"Server failed to check modification timestamp as {message.file_path} does not exist.")
             send_message(
                 message=reply,
                 recipient_ip_address=client_ip_address,
@@ -169,9 +162,7 @@ class Server:
             is_successful, subscribed_clients = self.server_file_system.append_file(
                 relative_file_path=message.file_name, file_content=message.content
             )
-            is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(
-                message.file_name
-            )
+            is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(message.file_name)
 
             reply: AppendFileResponse = AppendFileResponse(
                 reply_id=uuid4(), is_successful=is_successful, modification_timestamp=modification_timestamp
@@ -186,7 +177,8 @@ class Server:
                     # TODO send update notification below only if current time is before monitoring_expiration_timestamp
                     # I am not sure about the delays between each subscribed client, so just put a curr time
 
-                    # TODO: I am not sure if at most one invocation semantics applies here. I will skip the implementation of it for now.
+                    # TODO: I am not sure if at most one invocation semantics applies here.
+                    #       I will skip the implementation of it for now.
 
                     if subscribed_client.monitoring_expiration_timestamp > curr_time:
                         update_notification = UpdateNotification(
