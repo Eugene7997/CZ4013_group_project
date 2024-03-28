@@ -26,7 +26,7 @@ class Cache:
     def update_cache_after_write(self, file_path: Path, offset: int, file_content: bytes) -> None:
         full_file_path = self.cache_working_directory.joinpath(file_path)
         full_file_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(full_file_path, "wb") as file:
+        with open(full_file_path, "r+b") as file:
             file.seek(offset)
             file.write(file_content)
 

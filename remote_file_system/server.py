@@ -61,7 +61,7 @@ class Server:
     def _dispatch_message(self, message: Message, client_ip_address: IPv4Address, client_port_number: int) -> None:
         if self._check_for_duplicate_request_message(message):
             logger.info(f"Duplicate request message detected: {message}")
-            reply = self._get_message_from_history(message.request_id)
+            reply: Message = self._get_message_from_history(message.request_id)
             logger.info(f"Sending message from history: {reply}")
             send_message(
                 reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5
@@ -138,7 +138,7 @@ class Server:
             )
             self._add_message_to_history(message.request_id, reply)
             if not is_successful:
-                logger.error(f"Server failed to check modification timestamp as {message.file_path} does not exist.")
+                logger.warning(f"Server failed to check modification timestamp as {message.file_path} does not exist.")
             send_message(
                 message=reply,
                 recipient_ip_address=client_ip_address,
@@ -195,9 +195,7 @@ class Server:
                         )
 
     def _check_for_duplicate_request_message(self, request_message: Message) -> bool:
-        if request_message.request_id in self.message_history:
-            return True
-        return False
+        return request_message.request_id in self.message_history
 
     def _add_message_to_history(self, request_id: uuid4, response_message: Message) -> None:
         self.message_history[request_id] = response_message
