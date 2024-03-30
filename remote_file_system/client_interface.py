@@ -43,7 +43,10 @@ class Client:
         self.freshness_interval_in_seconds: int = freshness_interval_in_seconds
 
     def read_file(self, file_path: Path, offset: int, number_of_bytes: int) -> bytes:
+        logger.debug(f"Reading {number_of_bytes} bytes from {file_path} at an offset of {offset}.")
+
         if not self.cache.is_in_cache(file_path):
+            logger.debug(f"No cache entry exists for {file_path}.")
             entire_file_content: bytes = self._get_file_from_server(file_path)
             desired_file_content = entire_file_content[offset : offset + number_of_bytes]
             return desired_file_content
@@ -60,16 +63,19 @@ class Client:
         return desired_file_content
 
     def _check_validity_on_client(self, file_path: Path) -> bool:
+        logger.debug(f"Checking validation timestamp on cache entry for {file_path}.")
         current_timestamp: int = int(time.time())
         validation_timestamp: int = self.cache.get_validation_timestamp(file_path)
         return current_timestamp - validation_timestamp < self.freshness_interval_in_seconds
 
     def _check_validity_on_server(self, file_path: Path) -> bool:
+        logger.debug(f"Checking server modification timestamp on cache entry for {file_path}.")
         cache_modification_timestamp: int = self.cache.get_modification_timestamp(file_path)
         server_modification_timestamp: int = self._get_modification_timestamp_from_server(file_path)
         return cache_modification_timestamp == server_modification_timestamp
 
     def _get_file_from_server(self, file_path: Path) -> bytes:
+        logger.debug(f"Client retrieving {file_path} from server.")
         outgoing_message: Message = ReadFileRequest(request_id=uuid4(), filename=str(file_path))
         incoming_message: ReadFileResponse | None = send_message(
             message=outgoing_message,
@@ -100,10 +106,11 @@ class Client:
         if incoming_message.is_successful:
             return incoming_message.modification_timestamp
         else:
-            logger.error("Couldn't get modification timestamp")
+            logger.warning("Couldn't get modification timestamp")
             return incoming_message.modification_timestamp
 
     def write_file(self, file_path: Path, offset: int, number_of_bytes: int, content: bytes):
+        logger.debug(f"Writing {number_of_bytes} bytes of {content} to {file_path} at an offset of {offset}.")
         outgoing_message: Message = WriteFileRequest(
             request_id=uuid4(), offset=offset, file_name=str(file_path), content=content
         )
@@ -115,10 +122,10 @@ class Client:
             timeout_in_seconds=5,
         )
         if not incoming_message:
-            logger.error("Server did not respond to a Write File operation.")
+            logger.warning("Server did not respond to a Write File operation.")
             return
         if not incoming_message.is_successful:
-            logger.error("Server responded that the Write File operation is not successful.")
+            logger.warning("Server responded that the Write File operation is not successful.")
             return
 
         if self.cache.is_in_cache(file_path=file_path):
@@ -131,6 +138,7 @@ class Client:
         return incoming_message.is_successful
 
     def append_file(self, file_path: Path, content: bytes):
+        logger.debug(f"Appending {content} to {file_path}.")
         outgoing_message: Message = AppendFileRequest(request_id=uuid4(), file_name=str(file_path), content=content)
         incoming_message: AppendFileResponse | None = send_message(
             message=outgoing_message,
@@ -140,10 +148,10 @@ class Client:
             timeout_in_seconds=5,
         )
         if not incoming_message:
-            logger.error("Server did not respond to a Append File operation.")
+            logger.warning("Server did not respond to a Append File operation.")
             return
         if not incoming_message.is_successful:
-            logger.error("Server responded that the Append File operation is not successful.")
+            logger.warning("Server responded that the Append File operation is not successful.")
             return
 
         if self.cache.is_in_cache(file_path=file_path):
@@ -155,6 +163,7 @@ class Client:
         return incoming_message.is_successful
 
     def delete_file_in_server(self, file_name: Path) -> bytes:
+        logger.debug(f"Deleting {file_name}.")
         # TODO: Implement delete file in client cache
 
         outgoing_message: Message = DeleteFileRequest(request_id=uuid4(), filename=str(file_name))
@@ -167,10 +176,11 @@ class Client:
         )
         is_successful = incoming_message.is_successful
         if not is_successful:
-            logger.error("Delete Failed. hehe")
+            logger.warning("Delete Failed. hehe")
         return is_successful
 
     def subscribe_to_updates(self, file_name: str, monitoring_interval_in_seconds: int, file_name_length: int) -> None:
+        logger.debug(f"Subscribing to updates to {file_name} for {monitoring_interval_in_seconds} seconds.")
         outgoing_message: Message = SubscribeToUpdatesRequest(
             client_ip_address=self.client_ip_address,
             client_port_number=self.client_port_number,
@@ -187,7 +197,7 @@ class Client:
         )
 
         if not incoming_message.is_successful:
-            logger.error(f"Client failed to subscribe to updates for {file_name}.")
+            logger.warning(f"Client failed to subscribe to updates for {file_name}.")
             return
         self.listen_for_updates(monitoring_interval_in_seconds)
 

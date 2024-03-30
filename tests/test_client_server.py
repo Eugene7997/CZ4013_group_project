@@ -10,6 +10,10 @@ from remote_file_system.server_file_system import ServerFileSystem
 
 
 class TestClientServer:
+    """
+    Integration tests between the client and server. Messages are expected to be sent over the network.
+    """
+
     SERVER_IP_ADDRESS = IPv4Address("127.0.0.1")
     SERVER_PORT_NUMBER = 12345
 
