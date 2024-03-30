@@ -31,8 +31,12 @@ class Server:
         self.server_ip_address: IPv4Address = server_ip_address
         self.server_port_number: int = server_port_number
         self.server_file_system: ServerFileSystem = file_system
+        self.keep_listening = True
         # store request id as key. value is the Message
         self.message_history: Dict[UUID, Message] = {}
+
+    def stop_listening(self):
+        self.keep_listening = False
 
     def listen_for_messages(self) -> None:
         sock = socket(AF_INET, SOCK_DGRAM)
@@ -40,7 +44,7 @@ class Server:
         sock.bind(server_address)
 
         try:
-            while True:
+            while self.keep_listening:
                 logger.info(f"Socket is listening for messages at {self.server_ip_address}:{self.server_port_number}.")
 
                 incoming_bytes, sender_address = sock.recvfrom(4096)  # TODO review fixed buffer size
