@@ -1,4 +1,4 @@
-import multiprocessing
+import threading
 from ipaddress import IPv4Address
 from pathlib import Path
 
@@ -26,10 +26,11 @@ class TestClientServer:
             server_port_number=self.SERVER_PORT_NUMBER,
             file_system=server_file_system,
         )
-        server_process = multiprocessing.Process(target=server.listen_for_messages)
-        server_process.start()
+        server_thread = threading.Thread(target=server.listen_for_messages)
+        server_thread.start()
         yield
-        server_process.terminate()
+        server.stop_listening()
+        server_thread.join()
 
     def test_read_file(self):
         CLIENT_PORT_NUMBER = 9999
