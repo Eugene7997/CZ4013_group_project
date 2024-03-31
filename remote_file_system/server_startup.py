@@ -4,6 +4,7 @@ from pathlib import Path
 
 from remote_file_system.server import Server
 from remote_file_system.server_file_system import ServerFileSystem
+from remote_file_system.server import InvocationSemantics
 
 
 parser = argparse.ArgumentParser(prog="server_menu", description="Create server with given arguments")
@@ -19,17 +20,24 @@ invocation_method = args.invocation_method
 SERVER_IP_ADDRESS = IPv4Address(args.ip_address)
 SERVER_PORT_NUMBER = args.port_number
 
-# TODO Add server root directory deafult
+# TODO Add server root directory default
 server_root_directory: Path = Path.cwd() / "tests" / "server"
 
 server_file_system = ServerFileSystem(server_root_directory=server_root_directory)
-server = Server(
-    server_ip_address=SERVER_IP_ADDRESS,
-    server_port_number=SERVER_PORT_NUMBER,
-    file_system=server_file_system,
-)
-if invocation_method == 0:
-    server.listen_for_messages()
 
-if invocation_method == 1:
+if invocation_method == 0:
+    server = Server(
+        server_ip_address=SERVER_IP_ADDRESS,
+        server_port_number=SERVER_PORT_NUMBER,
+        file_system=server_file_system,
+        invocation_semantics=InvocationSemantics.AT_LEAST_ONCE,
+    )
+    server.listen_for_messages()
+else:
+    server = Server(
+        server_ip_address=SERVER_IP_ADDRESS,
+        server_port_number=SERVER_PORT_NUMBER,
+        file_system=server_file_system,
+        invocation_semantics=InvocationSemantics.AT_MOST_ONCE,
+    )
     server.listen_for_messages()
