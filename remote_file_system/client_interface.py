@@ -7,7 +7,7 @@ from uuid import uuid4
 from loguru import logger
 
 from remote_file_system.client_cache import Cache
-from remote_file_system.communications import send_message
+from remote_file_system.communications import send_message_and_wait_for_reply
 from remote_file_system.message import (
     Message,
     ReadFileRequest,
@@ -77,7 +77,7 @@ class Client:
     def _get_file_from_server(self, file_path: Path) -> bytes:
         logger.debug(f"Client retrieving {file_path} from server.")
         outgoing_message: Message = ReadFileRequest(request_id=uuid4(), filename=str(file_path))
-        incoming_message: ReadFileResponse | None = send_message(
+        incoming_message: ReadFileResponse | None = send_message_and_wait_for_reply(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
@@ -96,7 +96,7 @@ class Client:
 
     def _get_modification_timestamp_from_server(self, file_path: Path) -> int:
         outgoing_message: Message = ModifiedTimestampRequest(request_id=uuid4(), file_path=str(file_path))
-        incoming_message: ModifiedTimestampResponse | None = send_message(
+        incoming_message: ModifiedTimestampResponse | None = send_message_and_wait_for_reply(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
@@ -114,7 +114,7 @@ class Client:
         outgoing_message: Message = WriteFileRequest(
             request_id=uuid4(), offset=offset, file_name=str(file_path), content=content
         )
-        incoming_message: WriteFileResponse | None = send_message(
+        incoming_message: WriteFileResponse | None = send_message_and_wait_for_reply(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
@@ -140,7 +140,7 @@ class Client:
     def append_file(self, file_path: Path, content: bytes):
         logger.debug(f"Appending {content} to {file_path}.")
         outgoing_message: Message = AppendFileRequest(request_id=uuid4(), file_name=str(file_path), content=content)
-        incoming_message: AppendFileResponse | None = send_message(
+        incoming_message: AppendFileResponse | None = send_message_and_wait_for_reply(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
@@ -167,7 +167,7 @@ class Client:
         # TODO: Implement delete file in client cache
 
         outgoing_message: Message = DeleteFileRequest(request_id=uuid4(), filename=str(file_name))
-        incoming_message: DeleteFileResponse | None = send_message(
+        incoming_message: DeleteFileResponse | None = send_message_and_wait_for_reply(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,
@@ -188,7 +188,7 @@ class Client:
             file_name=file_name,
             monitoring_interval_in_seconds=monitoring_interval_in_seconds,
         )
-        incoming_message: SubscribeToUpdatesResponse | None = send_message(
+        incoming_message: SubscribeToUpdatesResponse | None = send_message_and_wait_for_reply(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
             recipient_port_number=self.server_port_number,

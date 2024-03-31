@@ -29,7 +29,7 @@ class TestClient:
         yield client
 
     @staticmethod
-    @patch("remote_file_system.client_interface.send_message")
+    @patch("remote_file_system.client_interface.send_message_and_wait_for_reply")
     def test_read_file_not_in_cache(mock_send_message: Mock, client: Client):
         """
         Expected: No cache entry. Client makes a request to the mock server.
@@ -51,7 +51,7 @@ class TestClient:
         assert actual == expected
 
     @staticmethod
-    @patch("remote_file_system.client_interface.send_message")
+    @patch("remote_file_system.client_interface.send_message_and_wait_for_reply")
     def test_read_file_from_valid_cache_validation_within_freshness_interval(mock_send_message: Mock, client: Client):
         """
         Expected: Validation timestamp is within freshness interval. Client reads from cache directly.
@@ -108,7 +108,7 @@ class TestClient:
         assert actual == expected
 
     @staticmethod
-    @patch("remote_file_system.client_interface.send_message")
+    @patch("remote_file_system.client_interface.send_message_and_wait_for_reply")
     def test_read_file_outdated_cache(mock_send_message: Mock, client: Client):
         """
         Expected: Validation timestamp is not within freshness interval. Client gets the modification timestamp from the
@@ -147,7 +147,7 @@ class TestClient:
         assert actual == expected, "Expected client to return updated file just retrieved from server"
 
     @staticmethod
-    @patch("remote_file_system.client_interface.send_message")
+    @patch("remote_file_system.client_interface.send_message_and_wait_for_reply")
     def test_write_file_update_cache(mock_send_message, client: Client):
         relative_mock_file_path = Path("mock_file_path")
         ancient_timestamp: int = 1_072_915_200

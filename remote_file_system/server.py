@@ -1,4 +1,5 @@
 import time
+from enum import Enum
 from ipaddress import IPv4Address
 from socket import socket, AF_INET, SOCK_DGRAM
 from typing import Dict, Tuple
@@ -26,13 +27,25 @@ from remote_file_system.message import (
 from remote_file_system.server_file_system import ServerFileSystem
 
 
+class InvocationSemantics(Enum):
+    AT_LEAST_ONCE = 0
+    AT_MOST_ONCE = 1
+
+
 class Server:
-    def __init__(self, server_ip_address: IPv4Address, server_port_number: int, file_system: ServerFileSystem):
+    def __init__(
+        self,
+        server_ip_address: IPv4Address,
+        server_port_number: int,
+        file_system: ServerFileSystem,
+        invocation_semantics: InvocationSemantics = InvocationSemantics.AT_LEAST_ONCE,
+    ):
         self.server_ip_address: IPv4Address = server_ip_address
         self.server_port_number: int = server_port_number
         self.server_file_system: ServerFileSystem = file_system
         # store request id as key. value is the Message
         self.message_history: Dict[UUID, Message] = {}
+        self.invocation_semantics = invocation_semantics
 
     def listen_for_messages(self) -> None:
         sock = socket(AF_INET, SOCK_DGRAM)
@@ -59,14 +72,13 @@ class Server:
             sock.close()
 
     def _dispatch_message(self, message: Message, client_ip_address: IPv4Address, client_port_number: int) -> None:
-        if self._check_for_duplicate_request_message(message):
-            logger.info(f"Duplicate request message detected: {message}")
-            reply: Message = self._get_message_from_history(message.request_id)
-            logger.info(f"Sending message from history: {reply}")
-            send_message(
-                reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5
-            )
-            return
+        if self.invocation_semantics == InvocationSemantics.AT_MOST_ONCE:
+            if self._check_for_duplicate_request_message(message):
+                logger.info(f"Duplicate request message detected: {message}")
+                reply: Message = self._get_message_from_history(message.request_id)
+                logger.info(f"Sending message from history: {reply}")
+                send_message(reply, client_ip_address, client_port_number)
+                return
 
         if isinstance(message, ReadFileRequest):
             content: bytes = self.server_file_system.read_file(relative_file_path=message.file_name)
@@ -75,9 +87,7 @@ class Server:
                 reply_id=uuid4(), content=content, modification_timestamp=modification_timestamp
             )
             self._add_message_to_history(message.request_id, reply)
-            send_message(
-                reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5
-            )
+            send_message(reply, client_ip_address, client_port_number)
         elif isinstance(message, WriteFileRequest):
             is_successful, subscribed_clients = self.server_file_system.write_file(
                 relative_file_path=message.file_name, offset=message.offset, file_content=message.content
@@ -87,9 +97,7 @@ class Server:
                 reply_id=uuid4(), is_successful=is_successful, modification_timestamp=modification_timestamp
             )
             self._add_message_to_history(message.request_id, reply)
-            send_message(
-                reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5
-            )
+            send_message(reply, client_ip_address, client_port_number)
             if is_successful:
                 curr_time = int(time.time())
                 for subscribed_client in subscribed_clients:
@@ -110,8 +118,6 @@ class Server:
                             message=update_notification,
                             recipient_ip_address=subscribed_client.ip_address,
                             recipient_port_number=subscribed_client.port_number,
-                            max_attempts_to_send_message=1,
-                            timeout_in_seconds=5,
                         )
         elif isinstance(message, SubscribeToUpdatesRequest):
             isSuccessful: bool = self.server_file_system.subscribe_to_updates(
@@ -126,8 +132,6 @@ class Server:
                 message=reply,
                 recipient_ip_address=client_ip_address,
                 recipient_port_number=client_port_number,
-                max_attempts_to_send_message=1,
-                timeout_in_seconds=5,
             )
         elif isinstance(message, ModifiedTimestampRequest):
             is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(
@@ -140,11 +144,7 @@ class Server:
             if not is_successful:
                 logger.warning(f"Server failed to check modification timestamp as {message.file_path} does not exist.")
             send_message(
-                message=reply,
-                recipient_ip_address=client_ip_address,
-                recipient_port_number=client_port_number,
-                max_attempts_to_send_message=1,
-                timeout_in_seconds=5,
+                message=reply, recipient_ip_address=client_ip_address, recipient_port_number=client_port_number
             )
 
         elif isinstance(message, DeleteFileRequest):
@@ -155,8 +155,6 @@ class Server:
                 message=reply,
                 recipient_ip_address=client_ip_address,
                 recipient_port_number=client_port_number,
-                max_attempts_to_send_message=1,
-                timeout_in_seconds=5,
             )
         elif isinstance(message, AppendFileRequest):
             is_successful, subscribed_clients = self.server_file_system.append_file(
@@ -168,9 +166,7 @@ class Server:
                 reply_id=uuid4(), is_successful=is_successful, modification_timestamp=modification_timestamp
             )
             self._add_message_to_history(message.request_id, reply)
-            send_message(
-                reply, client_ip_address, client_port_number, max_attempts_to_send_message=1, timeout_in_seconds=5
-            )
+            send_message(reply, client_ip_address, client_port_number)
             if is_successful:
                 curr_time = int(time.time())
                 for subscribed_client in subscribed_clients:
@@ -190,8 +186,6 @@ class Server:
                             message=update_notification,
                             recipient_ip_address=subscribed_client.ip_address,
                             recipient_port_number=subscribed_client.port_number,
-                            max_attempts_to_send_message=1,
-                            timeout_in_seconds=5,
                         )
 
     def _check_for_duplicate_request_message(self, request_message: Message) -> bool:
