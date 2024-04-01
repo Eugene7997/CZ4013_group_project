@@ -165,7 +165,7 @@ class TestClient:
         )
 
         expected = b"mock_file_content>>>>>newtarget<<<<<"
-        client.write_file(file_path=relative_mock_file_path, offset=22, number_of_bytes=9, content=b"newtarget")
+        client.write_file(file_path=relative_mock_file_path, offset=22, content=b"newtarget")
         with open(full_mock_file_path, "rb") as f:
             actual = f.read()
 

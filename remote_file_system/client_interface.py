@@ -109,8 +109,8 @@ class Client:
             logger.warning("Couldn't get modification timestamp")
             return incoming_message.modification_timestamp
 
-    def write_file(self, file_path: Path, offset: int, number_of_bytes: int, content: bytes):
-        logger.debug(f"Writing {number_of_bytes} bytes of {content} to {file_path} at an offset of {offset}.")
+    def write_file(self, file_path: Path, offset: int, content: bytes):
+        logger.debug(f"Writing {len(content)} bytes of {content} to {file_path} at an offset of {offset}.")
         outgoing_message: Message = WriteFileRequest(
             request_id=uuid4(), offset=offset, file_name=str(file_path), content=content
         )
@@ -162,11 +162,11 @@ class Client:
 
         return incoming_message.is_successful
 
-    def delete_file_in_server(self, file_name: Path) -> bytes:
-        logger.debug(f"Deleting {file_name}.")
+    def delete_file_in_server(self, file_path: Path) -> bytes:
+        logger.debug(f"Deleting {file_path}.")
         # TODO: Implement delete file in client cache
 
-        outgoing_message: Message = DeleteFileRequest(request_id=uuid4(), filename=str(file_name))
+        outgoing_message: Message = DeleteFileRequest(request_id=uuid4(), filename=str(file_path))
         incoming_message: DeleteFileResponse | None = send_message_and_wait_for_reply(
             message=outgoing_message,
             recipient_ip_address=self.server_ip_address,
@@ -179,13 +179,13 @@ class Client:
             logger.warning("Delete Failed. hehe")
         return is_successful
 
-    def subscribe_to_updates(self, file_name: str, monitoring_interval_in_seconds: int, file_name_length: int) -> None:
-        logger.debug(f"Subscribing to updates to {file_name} for {monitoring_interval_in_seconds} seconds.")
+    def subscribe_to_updates(self, file_path: Path, monitoring_interval_in_seconds: int) -> None:
+        logger.debug(f"Subscribing to updates to {file_path} for {monitoring_interval_in_seconds} seconds.")
         outgoing_message: Message = SubscribeToUpdatesRequest(
             client_ip_address=self.client_ip_address,
             client_port_number=self.client_port_number,
-            file_name_length=file_name_length,
-            file_name=file_name,
+            file_name_length=len(str(file_path)),
+            file_name=str(file_path),
             monitoring_interval_in_seconds=monitoring_interval_in_seconds,
         )
         incoming_message: SubscribeToUpdatesResponse | None = send_message_and_wait_for_reply(
@@ -197,7 +197,7 @@ class Client:
         )
 
         if not incoming_message.is_successful:
-            logger.warning(f"Client failed to subscribe to updates for {file_name}.")
+            logger.warning(f"Client failed to subscribe to updates for {file_path}.")
             return
         self.listen_for_updates(monitoring_interval_in_seconds)
 
