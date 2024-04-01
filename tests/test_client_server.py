@@ -56,4 +56,4 @@ class TestClientServer:
             freshness_interval_in_seconds=5,
         )
 
-        assert client.write_file(file_path=Path("digits.txt"), offset=1, number_of_bytes=10, content=b"1234567890")
+        assert client.write_file(file_path=Path("digits.txt"), offset=1, content=b"1234567890")
