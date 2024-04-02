@@ -46,6 +46,10 @@ def send_message_and_wait_for_reply(
 
             incoming_bytes: bytes = sock.recv(4096)  # TODO review fixed buffer size
             break
+        except ConnectionResetError:
+            # TODO: consider if we can replace the timeout for connection reset with cleaner solution
+            time.sleep(timeout_in_seconds)
+            logger.warning(f"Attempt {attempt_number + 1} failed due to a connection reset.")
         except socket.timeout:
             logger.warning(f"Attempt {attempt_number + 1} timed out while waiting for a response.")
 
