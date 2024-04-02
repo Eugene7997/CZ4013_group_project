@@ -67,7 +67,10 @@ class TestNetworkExperimentDuplicateMessages:
         mock_read_file: Mock = mock_server_file_system.read_file
         server.stop_listening()
         server_thread.join()
-        assert 2 == mock_read_file.call_count, "Expected server to invoke read_file method twice"
+
+        expected = 2
+        actual = mock_read_file.call_count
+        assert expected == actual, "Expected server to invoke read_file method twice"
         assert response_1, "Expected server to respond to first message"
         assert response_2, "Expected server to respond to second message"
 
@@ -129,15 +132,12 @@ class TestNetworkExperimentDuplicateMessages:
         - Server should invoke the read_file method only once for the first message.
         - Server should use the message history to respond to the second message.
 
-        innovcation     : at most once
+        innovcation     : at least once
         operation type  : non-idempotent
 
         """
         with open("tests/server/appendme.txt", "w") as file:
             file.write("Hello? Is it me you're looking for?")
-
-        with open("tests/server/appendme_appended_once.txt", "w") as file:
-            file.write("Hello? Is it me you're looking for?a")
 
         server_root_directory: Path = Path.cwd() / "tests" / "server"
         server_file_system = ServerFileSystem(server_root_directory=server_root_directory)
@@ -173,13 +173,13 @@ class TestNetworkExperimentDuplicateMessages:
         mock_append_file: Mock = mock_server_file_system.append_file
         server.stop_listening()
         server_thread.join()
-        assert 2 == mock_append_file.call_count, "Expected server to invoke append file operation twice"
+
+        expected = 2
+        actual = mock_append_file.call_count
+        assert expected == actual, "Expected server to invoke append file operation twice"
         assert response_1, "Expected server to respond to first message"
         assert response_2, "Expected server to respond to second message"
-        same = (
-            open("tests/server/appendme.txt", "rb").read()
-            == open("tests/server/appendme_appended_once.txt", "rb").read() + b"a"
-        )
+        same = open("tests/server/appendme.txt", "rb").read() == b"Hello? Is it me you're looking for?a" + b"a"
         assert same is True, "Expected original file to be different from the appended file"
 
     def test_network_failure_experiment_6(self):
@@ -196,9 +196,6 @@ class TestNetworkExperimentDuplicateMessages:
         """
         with open("tests/server/appendme.txt", "w") as file:
             file.write("Hello? Is it me you're looking for?")
-
-        with open("tests/server/appendme_appended_once.txt", "w") as file:
-            file.write("Hello? Is it me you're looking for?a")
 
         server_root_directory: Path = Path.cwd() / "tests" / "server"
         server_file_system = ServerFileSystem(server_root_directory=server_root_directory)
@@ -240,8 +237,5 @@ class TestNetworkExperimentDuplicateMessages:
         assert response_1, "Expected server to respond to first message"
         assert response_2, "Expected server to respond to second message"
         assert response_1 == response_2, "Expected server to use cached reply to respond to the second message"
-        same = (
-            open("tests/server/appendme.txt", "rb").read()
-            == open("tests/server/appendme_appended_once.txt", "rb").read()
-        )
+        same = open("tests/server/appendme.txt", "rb").read() == b"Hello? Is it me you're looking for?a"
         assert same is True, "Expected original file to be the same from the appended file"
