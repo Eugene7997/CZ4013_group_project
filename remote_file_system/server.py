@@ -56,22 +56,27 @@ class Server:
         server_address: Tuple[str, int] = (str(self.server_ip_address), self.server_port_number)
         sock.bind(server_address)
 
+        sock.settimeout(10)
+        # sock.setblocking(False)
+
         try:
-            while self.keep_listening:
-                logger.info(f"Socket is listening for messages at {self.server_ip_address}:{self.server_port_number}.")
+            try:
+                while self.keep_listening:
+                    logger.info(f"Socket is listening for messages at {self.server_ip_address}:{self.server_port_number}.")
+                    incoming_bytes, sender_address = sock.recvfrom(4096)  # TODO review fixed buffer size
+                    sender_ip_address, sender_port_number = sender_address
+                    logger.info(f"Received {len(incoming_bytes)} bytes from {sender_ip_address}:{sender_port_number}.")
 
-                incoming_bytes, sender_address = sock.recvfrom(4096)  # TODO review fixed buffer size
-                sender_ip_address, sender_port_number = sender_address
-                logger.info(f"Received {len(incoming_bytes)} bytes from {sender_ip_address}:{sender_port_number}.")
-
-                if incoming_bytes:
-                    incoming_message: Message = Message.unmarshall(incoming_bytes)
-                    logger.debug(f"Received {incoming_message}.")
-                    self._dispatch_message(
-                        message=incoming_message,
-                        client_ip_address=IPv4Address(sender_ip_address),
-                        client_port_number=sender_port_number,
-                    )
+                    if incoming_bytes:
+                        incoming_message: Message = Message.unmarshall(incoming_bytes)
+                        logger.debug(f"Received {incoming_message}.")
+                        self._dispatch_message(
+                            message=incoming_message,
+                            client_ip_address=IPv4Address(sender_ip_address),
+                            client_port_number=sender_port_number,
+                        )
+            except TimeoutError:
+                pass
         finally:
             sock.close()
 
