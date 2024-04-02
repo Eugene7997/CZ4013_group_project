@@ -84,6 +84,7 @@ class Client:
             max_attempts_to_send_message=3,
             timeout_in_seconds=5,
         )
+        # TODO: Error handling for NoneType for incoming_message
         entire_file_content: bytes = incoming_message.content
         server_modification_timestamp: int = incoming_message.modification_timestamp
         self.cache.put_in_cache(
