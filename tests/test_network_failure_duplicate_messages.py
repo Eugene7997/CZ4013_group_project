@@ -1,21 +1,20 @@
 import threading
 import time
-import pytest
 
 from ipaddress import IPv4Address
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from uuid import uuid4, UUID
 from loguru import logger
 
 from remote_file_system.communications import send_message_and_wait_for_reply
 from remote_file_system.server import Server, InvocationSemantics
 from remote_file_system.server_file_system import ServerFileSystem
-from remote_file_system.client_interface import Client
 from remote_file_system.message import (
     ReadFileRequest,
     AppendFileRequest,
 )
+
 
 class TestNetworkExperimentDuplicateMessages:
 
@@ -41,7 +40,7 @@ class TestNetworkExperimentDuplicateMessages:
             server_ip_address=self.SERVER_IP_ADDRESS,
             server_port_number=self.SERVER_PORT_NUMBER,
             file_system=mock_server_file_system,
-            invocation_semantics=InvocationSemantics.AT_LEAST_ONCE
+            invocation_semantics=InvocationSemantics.AT_LEAST_ONCE,
         )
         logger.info("SERVER START")
         server_thread = threading.Thread(target=server.listen_for_messages)
@@ -91,7 +90,7 @@ class TestNetworkExperimentDuplicateMessages:
             server_ip_address=self.SERVER_IP_ADDRESS,
             server_port_number=self.SERVER_PORT_NUMBER,
             file_system=mock_server_file_system,
-            invocation_semantics=InvocationSemantics.AT_MOST_ONCE
+            invocation_semantics=InvocationSemantics.AT_MOST_ONCE,
         )
         logger.info("SERVER START")
         server_thread = threading.Thread(target=server.listen_for_messages)
@@ -136,7 +135,7 @@ class TestNetworkExperimentDuplicateMessages:
         """
         with open("tests/server/appendme.txt", "w") as file:
             file.write("Hello? Is it me you're looking for?")
-        
+
         with open("tests/server/appendme_appended_once.txt", "w") as file:
             file.write("Hello? Is it me you're looking for?a")
 
@@ -147,7 +146,7 @@ class TestNetworkExperimentDuplicateMessages:
             server_ip_address=self.SERVER_IP_ADDRESS,
             server_port_number=self.SERVER_PORT_NUMBER,
             file_system=mock_server_file_system,
-            invocation_semantics=InvocationSemantics.AT_LEAST_ONCE
+            invocation_semantics=InvocationSemantics.AT_LEAST_ONCE,
         )
         logger.info("SERVER START")
         server_thread = threading.Thread(target=server.listen_for_messages)
@@ -174,10 +173,13 @@ class TestNetworkExperimentDuplicateMessages:
         mock_append_file: Mock = mock_server_file_system.append_file
         server.stop_listening()
         server_thread.join()
-        assert 2 == mock_append_file.call_count , "Expected server to invoke append file operation twice"
+        assert 2 == mock_append_file.call_count, "Expected server to invoke append file operation twice"
         assert response_1, "Expected server to respond to first message"
         assert response_2, "Expected server to respond to second message"
-        same = open("tests/server/appendme.txt", "rb").read() == open("tests/server/appendme_appended_once.txt", "rb").read() + b"a"
+        same = (
+            open("tests/server/appendme.txt", "rb").read()
+            == open("tests/server/appendme_appended_once.txt", "rb").read() + b"a"
+        )
         assert same is True, "Expected original file to be different from the appended file"
 
     def test_network_failure_experiment_6(self):
@@ -205,7 +207,7 @@ class TestNetworkExperimentDuplicateMessages:
             server_ip_address=self.SERVER_IP_ADDRESS,
             server_port_number=self.SERVER_PORT_NUMBER,
             file_system=mock_server_file_system,
-            invocation_semantics=InvocationSemantics.AT_MOST_ONCE
+            invocation_semantics=InvocationSemantics.AT_MOST_ONCE,
         )
         logger.info("SERVER START")
         server_thread = threading.Thread(target=server.listen_for_messages)
@@ -234,9 +236,12 @@ class TestNetworkExperimentDuplicateMessages:
         server.stop_listening()
         server_thread.join()
         print(mock_append_file.call_count)
-        mock_append_file.assert_called_once() , "Expected server to invoke read_file method only once"
+        mock_append_file.assert_called_once(), "Expected server to invoke read_file method only once"
         assert response_1, "Expected server to respond to first message"
         assert response_2, "Expected server to respond to second message"
         assert response_1 == response_2, "Expected server to use cached reply to respond to the second message"
-        same = open("tests/server/appendme.txt", "rb").read() == open("tests/server/appendme_appended_once.txt", "rb").read()
+        same = (
+            open("tests/server/appendme.txt", "rb").read()
+            == open("tests/server/appendme_appended_once.txt", "rb").read()
+        )
         assert same is True, "Expected original file to be the same from the appended file"
