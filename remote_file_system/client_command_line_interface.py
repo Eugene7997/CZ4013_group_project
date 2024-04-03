@@ -103,7 +103,7 @@ class ClientCommandLineInterface:
             input_content: str = command_args[2]
             content: bytes = input_content.encode("utf-8")
         except ValueError:
-            print(Fore.RED + f"Invalid arguments were received for write command. The command was not executed.")
+            print(Fore.RED + "Invalid arguments were received for write command. The command was not executed.")
             return
 
         if self.client.write_file(file_path=file_path, offset=offset, content=content):
