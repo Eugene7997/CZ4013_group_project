@@ -62,7 +62,9 @@ class Server:
         try:
             try:
                 while self.keep_listening:
-                    logger.info(f"Socket is listening for messages at {self.server_ip_address}:{self.server_port_number}.")
+                    logger.info(
+                        f"Socket is listening for messages at " f"{self.server_ip_address}:{self.server_port_number}."
+                    )
                     incoming_bytes, sender_address = sock.recvfrom(4096)  # TODO review fixed buffer size
                     sender_ip_address, sender_port_number = sender_address
                     logger.info(f"Received {len(incoming_bytes)} bytes from {sender_ip_address}:{sender_port_number}.")
