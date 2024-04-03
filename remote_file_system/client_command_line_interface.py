@@ -54,19 +54,23 @@ class ClientCommandLineInterface:
 
         if len(command_args) != EXPECTED_NUMBER_OF_ARGUMENTS_FOR_READ_COMMAND:
             print(
-                Fore.RED + f"Read command requires"
+                Fore.RED + f"Read command requires "
                 f"exactly {EXPECTED_NUMBER_OF_ARGUMENTS_FOR_READ_COMMAND} arguments."
             )
             return
 
-        input_file_path: str = command_args[0]
-        file_path: Path = Path(input_file_path)
+        try:
+            input_file_path: str = command_args[0]
+            file_path: Path = Path(input_file_path)
 
-        input_offset: str = command_args[1]
-        offset: int = self._parse_offset(input_offset)
+            input_offset: str = command_args[1]
+            offset: int = self._parse_offset(input_offset)
 
-        input_number_of_bytes: str = command_args[2]
-        number_of_bytes: int = self._parse_number_of_bytes(input_number_of_bytes)
+            input_number_of_bytes: str = command_args[2]
+            number_of_bytes: int = self._parse_number_of_bytes(input_number_of_bytes)
+        except ValueError as e:
+            print(Fore.RED + f"Invalid arguments were received for read command: {e}")
+            return
 
         self.client.read_file(
             file_path=file_path,
@@ -79,19 +83,23 @@ class ClientCommandLineInterface:
 
         if len(command_args) != EXPECTED_NUMBER_OF_ARGUMENTS_FOR_WRITE_COMMAND:
             print(
-                Fore.RED + f"Write command requires"
+                Fore.RED + f"Write command requires "
                 f"exactly {EXPECTED_NUMBER_OF_ARGUMENTS_FOR_WRITE_COMMAND} arguments."
             )
             return
 
-        input_file_path: str = command_args[0]
-        file_path: Path = Path(input_file_path)
+        try:
+            input_file_path: str = command_args[0]
+            file_path: Path = Path(input_file_path)
 
-        input_offset: str = command_args[1]
-        offset: int = self._parse_offset(input_offset)
+            input_offset: str = command_args[1]
+            offset: int = self._parse_offset(input_offset)
 
-        input_content: str = command_args[2]
-        content: bytes = input_content.encode("utf-8")
+            input_content: str = command_args[2]
+            content: bytes = input_content.encode("utf-8")
+        except ValueError:
+            print(Fore.RED + f"Invalid arguments were received for write command. The command was not executed.")
+            return
 
         self.client.write_file(file_path=file_path, offset=offset, content=content)
 
@@ -105,11 +113,15 @@ class ClientCommandLineInterface:
             )
             return
 
-        input_file_path: str = command_args[0]
-        file_path: Path = Path(input_file_path)
+        try:
+            input_file_path: str = command_args[0]
+            file_path: Path = Path(input_file_path)
 
-        input_content: str = command_args[1]
-        content: bytes = input_content.encode("utf-8")
+            input_content: str = command_args[1]
+            content: bytes = input_content.encode("utf-8")
+        except ValueError as e:
+            print(Fore.RED + f"Invalid arguments were received for append command: {e}")
+            return
 
         self.client.append_file(file_path=file_path, content=content)
 
@@ -118,13 +130,17 @@ class ClientCommandLineInterface:
 
         if len(command_args) != EXPECTED_NUMBER_OF_ARGUMENTS_FOR_DELETE_COMMAND:
             print(
-                Fore.RED + f"Delete command requires"
+                Fore.RED + f"Delete command requires "
                 f"exactly {EXPECTED_NUMBER_OF_ARGUMENTS_FOR_DELETE_COMMAND} arguments."
             )
             return
 
-        input_file_path: str = command_args[0]
-        file_path: Path = Path(input_file_path)
+        try:
+            input_file_path: str = command_args[0]
+            file_path: Path = Path(input_file_path)
+        except ValueError as e:
+            print(Fore.RED + f"Invalid arguments were received for delete command: {e}")
+            return
 
         self.client.delete_file_in_server(file_path=file_path)
 
@@ -138,13 +154,17 @@ class ClientCommandLineInterface:
             )
             return
 
-        input_file_path: str = command_args[0]
-        file_path: Path = Path(input_file_path)
+        try:
+            input_file_path: str = command_args[0]
+            file_path: Path = Path(input_file_path)
 
-        input_monitoring_interval_in_seconds: str = command_args[1]
-        monitoring_interval_in_seconds: int = self._parse_monitoring_interval_in_seconds(
-            input_monitoring_interval_in_seconds
-        )
+            input_monitoring_interval_in_seconds: str = command_args[1]
+            monitoring_interval_in_seconds: int = self._parse_monitoring_interval_in_seconds(
+                input_monitoring_interval_in_seconds
+            )
+        except ValueError as e:
+            print(Fore.RED + f"Invalid arguments were received for subscribe command: {e}")
+            return
 
         self.client.subscribe_to_updates(
             file_path=file_path, monitoring_interval_in_seconds=monitoring_interval_in_seconds
@@ -154,25 +174,27 @@ class ClientCommandLineInterface:
     def _parse_offset(offset: str) -> int:
         try:
             return int(offset)
-        except ValueError:
-            print(Fore.RED + f"{offset} is not valid input for offset. " f"Please enter an integer instead.")
+        except ValueError as e:
+            raise ValueError(
+                Fore.RED + f"{offset} is not valid input for offset. " f"Please enter an integer instead."
+            ) from e
 
     @staticmethod
     def _parse_number_of_bytes(number_of_bytes: str) -> int:
         try:
             return int(number_of_bytes)
-        except ValueError:
-            print(
+        except ValueError as e:
+            raise ValueError(
                 Fore.RED + f"{number_of_bytes} is not valid input for number_of_bytes. "
                 f"Please enter an integer instead."
-            )
+            ) from e
 
     @staticmethod
     def _parse_monitoring_interval_in_seconds(monitoring_interval_in_seconds: str) -> int:
         try:
             return int(monitoring_interval_in_seconds)
-        except ValueError:
-            print(
-                Fore.RED + f"{monitoring_interval_in_seconds} is not valid input for monitoring_interval_in_seconds."
+        except ValueError as e:
+            raise ValueError(
+                Fore.RED + f"{monitoring_interval_in_seconds} is not valid input for monitoring_interval_in_seconds. "
                 f"Please enter an integer instead."
-            )
+            ) from e
