@@ -1,7 +1,7 @@
 import time
 from enum import Enum
 from ipaddress import IPv4Address
-from socket import socket, AF_INET, SOCK_DGRAM
+import socket
 from typing import Dict, Tuple
 from uuid import uuid4, UUID
 
@@ -52,18 +52,19 @@ class Server:
         self.keep_listening = False
 
     def listen_for_messages(self) -> None:
-        sock = socket(AF_INET, SOCK_DGRAM)
-        server_address: Tuple[str, int] = (str(self.server_ip_address), self.server_port_number)
-        sock.bind(server_address)
-
-        sock.settimeout(10)
-        # sock.setblocking(False)
+        sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         try:
-            try:
-                while self.keep_listening:
+            server_address: Tuple[str, int] = (str(self.server_ip_address), self.server_port_number)
+            sock.bind(server_address)
+
+            SERVER_TIMEOUT_IN_SECONDS = 5
+            sock.settimeout(SERVER_TIMEOUT_IN_SECONDS)
+
+            while self.keep_listening:
+                try:
                     logger.info(
-                        f"Socket is listening for messages at " f"{self.server_ip_address}:{self.server_port_number}."
+                        f"Socket is listening for messages at {self.server_ip_address}:{self.server_port_number}."
                     )
                     incoming_bytes, sender_address = sock.recvfrom(4096)  # TODO review fixed buffer size
                     sender_ip_address, sender_port_number = sender_address
@@ -77,8 +78,10 @@ class Server:
                             client_ip_address=IPv4Address(sender_ip_address),
                             client_port_number=sender_port_number,
                         )
-            except TimeoutError:
-                pass
+                except TimeoutError as e:
+                    logger.debug(f"Server did not receive messages after {SERVER_TIMEOUT_IN_SECONDS} seconds: {e}")
+                    pass
+
         finally:
             sock.close()
 
