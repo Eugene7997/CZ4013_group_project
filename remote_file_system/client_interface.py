@@ -163,7 +163,7 @@ class Client:
 
         return incoming_message.is_successful
 
-    def delete_file_in_server(self, file_path: Path) -> bytes:
+    def delete_file_in_server(self, file_path: Path) -> bool:
         logger.debug(f"Deleting {file_path}.")
         # TODO: Implement delete file in client cache
 
