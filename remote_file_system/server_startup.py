@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 from ipaddress import IPv4Address
 from pathlib import Path
