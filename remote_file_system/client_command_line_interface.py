@@ -72,11 +72,16 @@ class ClientCommandLineInterface:
             print(Fore.RED + f"Invalid arguments were received for read command: {e}")
             return
 
-        self.client.read_file(
+        raw_file_content: bytes = self.client.read_file(
             file_path=file_path,
             offset=offset,
             number_of_bytes=number_of_bytes,
         )
+        try:
+            file_content_decoded: str = raw_file_content.decode("utf-8")
+            print(file_content_decoded)
+        except UnicodeDecodeError as e:
+            print("Read command was successful but the file content could not be decoded with UTF-8.")
 
     def _parse_write_command(self, command_args: List[str]) -> None:
         EXPECTED_NUMBER_OF_ARGUMENTS_FOR_WRITE_COMMAND = 3
@@ -101,7 +106,10 @@ class ClientCommandLineInterface:
             print(Fore.RED + f"Invalid arguments were received for write command. The command was not executed.")
             return
 
-        self.client.write_file(file_path=file_path, offset=offset, content=content)
+        if self.client.write_file(file_path=file_path, offset=offset, content=content):
+            print("Write command was successful.")
+        else:
+            print("Write command was unsuccessful.")
 
     def _parse_append_command(self, command_args: List[str]) -> None:
         EXPECTED_NUMBER_OF_ARGUMENTS_FOR_APPEND_COMMAND = 2
@@ -123,7 +131,10 @@ class ClientCommandLineInterface:
             print(Fore.RED + f"Invalid arguments were received for append command: {e}")
             return
 
-        self.client.append_file(file_path=file_path, content=content)
+        if self.client.append_file(file_path=file_path, content=content):
+            print("Append command was successful.")
+        else:
+            print("Append command was unsuccessful")
 
     def _parse_delete_command(self, command_args: List[str]) -> None:
         EXPECTED_NUMBER_OF_ARGUMENTS_FOR_DELETE_COMMAND = 1
@@ -142,10 +153,13 @@ class ClientCommandLineInterface:
             print(Fore.RED + f"Invalid arguments were received for delete command: {e}")
             return
 
-        self.client.delete_file_in_server(file_path=file_path)
+        if self.client.delete_file_in_server(file_path=file_path):
+            print("Delete command was successful.")
+        else:
+            print("Delete command was unsuccessful.")
 
     def _parse_subscribe_command(self, command_args: List[str]) -> None:
-        EXPECTED_NUMBER_OF_ARGUMENTS_FOR_SUBSCRIBE_COMMAND = 1
+        EXPECTED_NUMBER_OF_ARGUMENTS_FOR_SUBSCRIBE_COMMAND = 2
 
         if len(command_args) != EXPECTED_NUMBER_OF_ARGUMENTS_FOR_SUBSCRIBE_COMMAND:
             print(
