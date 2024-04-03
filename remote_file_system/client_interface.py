@@ -183,6 +183,7 @@ class Client:
     def subscribe_to_updates(self, file_path: Path, monitoring_interval_in_seconds: int) -> None:
         logger.debug(f"Subscribing to updates to {file_path} for {monitoring_interval_in_seconds} seconds.")
         outgoing_message: Message = SubscribeToUpdatesRequest(
+            request_id=uuid4(),
             client_ip_address=self.client_ip_address,
             client_port_number=self.client_port_number,
             file_name_length=len(str(file_path)),

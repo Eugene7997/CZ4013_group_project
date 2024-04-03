@@ -202,11 +202,11 @@ class Server:
     def _check_for_duplicate_request_message(self, request_message: Message) -> bool:
         return request_message.request_id in self.message_history
 
-    def _add_message_to_history(self, request_id: uuid4, response_message: Message) -> None:
+    def _add_message_to_history(self, request_id: UUID, response_message: Message) -> None:
         self.message_history[request_id] = response_message
 
-    def _remove_message_from_history(self, request_id: uuid4) -> None:
+    def _remove_message_from_history(self, request_id: UUID) -> None:
         del self.message_history[request_id]
 
-    def _get_message_from_history(self, request_id: uuid4) -> Message:
+    def _get_message_from_history(self, request_id: UUID) -> Message:
         return self.message_history[request_id]

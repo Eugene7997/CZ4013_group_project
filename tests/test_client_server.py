@@ -1,6 +1,7 @@
 import multiprocessing
 from ipaddress import IPv4Address
 from pathlib import Path
+from typing import Generator
 
 import pytest
 
@@ -18,7 +19,7 @@ class TestClientServer:
     SERVER_PORT_NUMBER = 12345
 
     @pytest.fixture(autouse=True)
-    def start_server(self):
+    def start_server(self) -> Generator:
         server_root_directory: Path = Path.cwd() / "tests" / "server"
         server_file_system = ServerFileSystem(server_root_directory=server_root_directory)
         server = Server(
@@ -31,7 +32,7 @@ class TestClientServer:
         yield
         server_process.terminate()
 
-    def test_read_file(self):
+    def test_read_file(self) -> None:
         CLIENT_PORT_NUMBER = 9999
         client = Client(
             client_port_number=CLIENT_PORT_NUMBER,

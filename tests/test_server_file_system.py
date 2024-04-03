@@ -7,7 +7,7 @@ class TestServerFileSystem:
     # TODO write additional unit tests for other methods of server interface
 
     @staticmethod
-    def test_read_file_file_exists():
+    def test_read_file_file_exists() -> None:
         server_root_directory: Path = Path.cwd() / "tests" / "server"
         server_file_system = ServerFileSystem(server_root_directory=server_root_directory)
         actual = server_file_system.read_file("english_alphabets.txt")
@@ -15,7 +15,7 @@ class TestServerFileSystem:
         assert actual == expected
 
     @staticmethod
-    def test_delete_file():
+    def test_delete_file() -> None:
         server_root_directory: Path = Path.cwd() / "tests" / "server"
         server = ServerFileSystem(server_root_directory=server_root_directory)
         f = open(f"{server_root_directory}/deleteme.txt", "w")

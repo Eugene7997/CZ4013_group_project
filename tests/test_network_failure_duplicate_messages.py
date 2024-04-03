@@ -21,7 +21,7 @@ class TestNetworkExperimentDuplicateMessages:
     SERVER_IP_ADDRESS = IPv4Address("127.0.0.1")
     SERVER_PORT_NUMBER = 12345
 
-    def test_network_failure_experiment_1(self):
+    def test_network_failure_experiment_1(self) -> None:
         """
         Network experiment 1: simulate duplicate of read request message.
 
@@ -74,7 +74,7 @@ class TestNetworkExperimentDuplicateMessages:
         assert response_1, "Expected server to respond to first message"
         assert response_2, "Expected server to respond to second message"
 
-    def test_network_failure_experiment_2(self):
+    def test_network_failure_experiment_2(self) -> None:
         """
         Network experiment 2: simulate duplicate of read request message.
 
@@ -124,7 +124,7 @@ class TestNetworkExperimentDuplicateMessages:
         assert response_1, "Expected server to respond to first message"
         assert response_1 == response_2, "Expected server to use cached reply to respond to the second message"
 
-    def test_network_failure_experiment_5(self):
+    def test_network_failure_experiment_5(self) -> None:
         """
         Network experiment 5: simulate duplicate of append request message.
 
@@ -182,7 +182,7 @@ class TestNetworkExperimentDuplicateMessages:
         same = open("tests/server/appendme.txt", "rb").read() == b"Hello? Is it me you're looking for?a" + b"a"
         assert same is True, "Expected original file to be different from the appended file"
 
-    def test_network_failure_experiment_6(self):
+    def test_network_failure_experiment_6(self) -> None:
         """
         Network experiment 6: simulate duplicate of append request message.
 

@@ -25,7 +25,7 @@ def send_message_and_wait_for_reply(
         time.sleep(timeout_in_seconds)
         remote_file_system.config.CLIENT_DROP_MESSAGE = False
 
-    sock: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # TODO: do more testing for sock.bind with different computers.
     sock.bind(("", 0))
     sock.settimeout(timeout_in_seconds)
@@ -77,7 +77,7 @@ def send_message(
         remote_file_system.config.SERVER_DROP_MESSAGE = False
         return
 
-    sock: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # TODO: do more testing for sock.bind with different computers.
     sock.bind(("", 0))
 

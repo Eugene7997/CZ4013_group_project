@@ -22,14 +22,14 @@ from remote_file_system.message import (
 
 class TestReadFileRequest:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         read_file_request: ReadFileRequest = ReadFileRequest(request_id=uuid4(), filename="random_file_name")
         marshalled_data: bytes = read_file_request.marshall()
         unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
         assert unmarshalled_obj == read_file_request
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         read_file_request: ReadFileRequest = ReadFileRequest(request_id=uuid4(), filename="random_file_name")
         marshalled_data: bytes = read_file_request._marshall_without_type_info()
         unmarshalled_obj: ReadFileRequest = ReadFileRequest._unmarshall_without_type_info(marshalled_data)
@@ -38,7 +38,7 @@ class TestReadFileRequest:
 
 class TestWriteFileRequest:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         write_file_request: WriteFileRequest = WriteFileRequest(
             request_id=uuid4(), offset=456, file_name="random_file", content=b"random_file_content"
         )
@@ -47,7 +47,7 @@ class TestWriteFileRequest:
         assert unmarshalled_obj == write_file_request
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         write_file_request: WriteFileRequest = WriteFileRequest(
             request_id=uuid4(), offset=456, file_name="random_file", content=b"random_file_content"
         )
@@ -58,7 +58,7 @@ class TestWriteFileRequest:
 
 class TestSubscribeToUpdatesRequest:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         subscribe_request: SubscribeToUpdatesRequest = SubscribeToUpdatesRequest(
             request_id=uuid4(),
             client_ip_address=IPv4Address("192.168.255.255"),
@@ -72,7 +72,7 @@ class TestSubscribeToUpdatesRequest:
         assert unmarshalled_obj == subscribe_request
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         subscribe_request: SubscribeToUpdatesRequest = SubscribeToUpdatesRequest(
             request_id=uuid4(),
             client_ip_address=IPv4Address("192.168.255.255"),
@@ -90,7 +90,7 @@ class TestSubscribeToUpdatesRequest:
 
 class TestReadFileResponse:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         read_file_response: ReadFileResponse = ReadFileResponse(
             reply_id=uuid4(), content=b"random content", modification_timestamp=123
         )
@@ -99,7 +99,7 @@ class TestReadFileResponse:
         assert unmarshalled_obj == read_file_response
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         read_file_response: ReadFileResponse = ReadFileResponse(
             reply_id=uuid4(), content=b"random content", modification_timestamp=123
         )
@@ -110,7 +110,7 @@ class TestReadFileResponse:
 
 class TestWriteFileResponse:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         write_file_response: WriteFileResponse = WriteFileResponse(
             reply_id=uuid4(), is_successful=False, modification_timestamp=123
         )
@@ -119,7 +119,7 @@ class TestWriteFileResponse:
         assert unmarshalled_obj == write_file_response
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         write_file_response: WriteFileResponse = WriteFileResponse(
             reply_id=uuid4(), is_successful=False, modification_timestamp=123
         )
@@ -130,7 +130,7 @@ class TestWriteFileResponse:
 
 class TestSubscribeToUpdatesResponse:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         subscribe_response: SubscribeToUpdatesResponse = SubscribeToUpdatesResponse(
             reply_id=uuid4(), is_successful=False
         )
@@ -139,7 +139,7 @@ class TestSubscribeToUpdatesResponse:
         assert unmarshalled_obj == subscribe_response
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         subscribe_response: SubscribeToUpdatesResponse = SubscribeToUpdatesResponse(
             reply_id=uuid4(), is_successful=False
         )
@@ -152,7 +152,7 @@ class TestSubscribeToUpdatesResponse:
 
 class TestUpdateNotification:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         update_notification: UpdateNotification = UpdateNotification(
             file_name="random_file.txt", content=b"hello world", modification_timestamp=123
         )
@@ -161,7 +161,7 @@ class TestUpdateNotification:
         assert unmarshalled_obj == update_notification
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         update_notification: UpdateNotification = UpdateNotification(
             file_name="random_file.txt", content=b"hello world", modification_timestamp=123
         )
@@ -172,14 +172,14 @@ class TestUpdateNotification:
 
 class TestModifiedTimestampRequest:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         modified_timestamp_request = ModifiedTimestampRequest(file_path="/test/path", request_id=uuid4())
         marshalled_data: bytes = modified_timestamp_request.marshall()
         unmarshalled_data: Message = Message.unmarshall(marshalled_data)
         assert modified_timestamp_request == unmarshalled_data
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         modified_timestamp_request: ModifiedTimestampRequest = ModifiedTimestampRequest(
             file_path="/test/path", request_id=uuid4()
         )
@@ -192,7 +192,7 @@ class TestModifiedTimestampRequest:
 
 class TestModifiedTimestampResponse:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         modified_timestamp_response: ModifiedTimestampResponse = ModifiedTimestampResponse(
             reply_id=uuid4(), modification_timestamp=int(time.time()), is_successful=False
         )
@@ -201,7 +201,7 @@ class TestModifiedTimestampResponse:
         assert unmarshalled_obj == modified_timestamp_response
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         modified_timestamp_response: ModifiedTimestampResponse = ModifiedTimestampResponse(
             reply_id=uuid4(), modification_timestamp=int(time.time()), is_successful=False
         )
@@ -214,14 +214,14 @@ class TestModifiedTimestampResponse:
 
 class TestDeleteFileRequest:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         delete_file_request: DeleteFileRequest = DeleteFileRequest(request_id=uuid4(), filename="random_file_name")
         marshalled_data: bytes = delete_file_request.marshall()
         unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
         assert unmarshalled_obj == delete_file_request
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         delete_file_request: DeleteFileRequest = DeleteFileRequest(request_id=uuid4(), filename="random_file_name")
         marshalled_data: bytes = delete_file_request._marshall_without_type_info()
         unmarshalled_obj: DeleteFileRequest = DeleteFileRequest._unmarshall_without_type_info(marshalled_data)
@@ -230,14 +230,14 @@ class TestDeleteFileRequest:
 
 class TestDeleteFileResponse:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         delete_file_response: DeleteFileResponse = DeleteFileResponse(reply_id=uuid4(), is_successful=False)
         marshalled_data: bytes = delete_file_response.marshall()
         unmarshalled_obj: Message = Message.unmarshall(marshalled_data)
         assert unmarshalled_obj == delete_file_response
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         delete_file_response: DeleteFileResponse = DeleteFileResponse(reply_id=uuid4(), is_successful=True)
         marshalled_data: bytes = delete_file_response._marshall_without_type_info()
         unmarshalled_obj: DeleteFileResponse = DeleteFileResponse._unmarshall_without_type_info(marshalled_data)
@@ -246,7 +246,7 @@ class TestDeleteFileResponse:
 
 class TestAppendFileRequest:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         append_file_request: AppendFileRequest = AppendFileRequest(
             request_id=uuid4(), file_name="random_file", content=b"random_file_content"
         )
@@ -255,7 +255,7 @@ class TestAppendFileRequest:
         assert unmarshalled_obj == append_file_request
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         append_file_request: AppendFileRequest = AppendFileRequest(
             request_id=uuid4(), file_name="random_file", content=b"random_file_content"
         )
@@ -266,7 +266,7 @@ class TestAppendFileRequest:
 
 class TestAppendFileResponse:
     @staticmethod
-    def test_marshall_unmarshall():
+    def test_marshall_unmarshall() -> None:
         append_file_response: AppendFileResponse = AppendFileResponse(
             reply_id=uuid4(), is_successful=False, modification_timestamp=123
         )
@@ -275,7 +275,7 @@ class TestAppendFileResponse:
         assert unmarshalled_obj == append_file_response
 
     @staticmethod
-    def test_marshall_unmarshall_without_type_info():
+    def test_marshall_unmarshall_without_type_info() -> None:
         append_file_response: AppendFileResponse = AppendFileResponse(
             reply_id=uuid4(), is_successful=False, modification_timestamp=123
         )
