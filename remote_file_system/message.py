@@ -193,7 +193,7 @@ class SubscribeToUpdatesResponse(Message):
 
 @Message.register_subclass(class_id=5)
 class ReadFileResponse(Message):
-    def __init__(self, reply_id: UUID, content: bytes, modification_timestamp: int):
+    def __init__(self, reply_id: UUID, content: bytes | None, modification_timestamp: int):
         self.reply_id: UUID = reply_id
         self.modification_timestamp: int = modification_timestamp
         self.content: bytes = content
