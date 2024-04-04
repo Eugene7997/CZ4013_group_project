@@ -65,9 +65,16 @@ class ClientCommandLineInterface:
 
             input_offset: str = command_args[1]
             offset: int = self._parse_offset(input_offset)
+            if offset < 0:
+                print(Fore.RED + f"offset should not be negative")
+                return
 
             input_number_of_bytes: str = command_args[2]
             number_of_bytes: int = self._parse_number_of_bytes(input_number_of_bytes)
+            if number_of_bytes < 0:
+                print(Fore.RED + f"number of bytes should not be negative")
+                return
+
         except ValueError as e:
             print(Fore.RED + f"Invalid arguments were received for read command: {e}")
             return
@@ -78,13 +85,14 @@ class ClientCommandLineInterface:
             number_of_bytes=number_of_bytes,
         )
         if not raw_file_content:
-            print("File does not exist")
+            print("Client did not receive any file content from the server. "
+                  "The file might not exist or the offset may be invalid.")
             return
         try:
             file_content_decoded: str = raw_file_content.decode("utf-8")
             print(file_content_decoded)
         except UnicodeDecodeError as e:
-            print("Read command was successful but the file content could not be decoded with UTF-8.")
+            print("Read command was executed but the file content could not be decoded with UTF-8.")
 
     def _parse_write_command(self, command_args: List[str]) -> None:
         EXPECTED_NUMBER_OF_ARGUMENTS_FOR_WRITE_COMMAND = 3
@@ -107,6 +115,10 @@ class ClientCommandLineInterface:
             content: bytes = input_content.encode("utf-8")
         except ValueError:
             print(Fore.RED + "Invalid arguments were received for write command. The command was not executed.")
+            return
+
+        if offset < 0:
+            print(Fore.RED + "Negative offset is invalid.")
             return
 
         if self.client.write_file(file_path=file_path, offset=offset, content=content):
