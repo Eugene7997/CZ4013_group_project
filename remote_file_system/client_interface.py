@@ -2,7 +2,7 @@ import time
 from ipaddress import IPv4Address
 from pathlib import Path
 from socket import socket, AF_INET, SOCK_DGRAM, gethostbyname, gethostname, timeout
-from typing import Tuple
+from typing import Tuple, Optional
 from uuid import uuid4
 from loguru import logger
 
@@ -42,12 +42,14 @@ class Client:
         self.cache: Cache = Cache(cache_working_directory)
         self.freshness_interval_in_seconds: int = freshness_interval_in_seconds
 
-    def read_file(self, file_path: Path, offset: int, number_of_bytes: int) -> bytes:
+    def read_file(self, file_path: Path, offset: int, number_of_bytes: int) -> Optional[bytes]:
         logger.debug(f"Reading {number_of_bytes} bytes from {file_path} at an offset of {offset}.")
 
         if not self.cache.is_in_cache(file_path):
             logger.debug(f"No cache entry exists for {file_path}.")
             entire_file_content: bytes = self._get_file_from_server(file_path)
+            if not entire_file_content:
+                return None
             desired_file_content = entire_file_content[offset : offset + number_of_bytes]
             return desired_file_content
 
@@ -74,7 +76,7 @@ class Client:
         server_modification_timestamp: int = self._get_modification_timestamp_from_server(file_path)
         return cache_modification_timestamp == server_modification_timestamp
 
-    def _get_file_from_server(self, file_path: Path) -> bytes:
+    def _get_file_from_server(self, file_path: Path) -> Optional[bytes]:
         logger.debug(f"Client retrieving {file_path} from server.")
         outgoing_message: Message = ReadFileRequest(request_id=uuid4(), filename=str(file_path))
         incoming_message: ReadFileResponse | None = send_message_and_wait_for_reply(
@@ -84,7 +86,9 @@ class Client:
             max_attempts_to_send_message=3,
             timeout_in_seconds=5,
         )
-        # TODO: Error handling for NoneType for incoming_message
+        if not incoming_message:
+            logger.warning("No response from server.")
+            return None
         entire_file_content: bytes = incoming_message.content
         server_modification_timestamp: int = incoming_message.modification_timestamp
         self.cache.put_in_cache(
@@ -165,7 +169,8 @@ class Client:
 
     def delete_file_in_server(self, file_path: Path) -> bool:
         logger.debug(f"Deleting {file_path}.")
-        # TODO: Implement delete file in client cache
+        if self.cache.is_in_cache(file_path):
+            self.cache.remove_from_cache(file_path=file_path)
 
         outgoing_message: Message = DeleteFileRequest(request_id=uuid4(), filename=str(file_path))
         incoming_message: DeleteFileResponse | None = send_message_and_wait_for_reply(
@@ -177,7 +182,7 @@ class Client:
         )
         is_successful = incoming_message.is_successful
         if not is_successful:
-            logger.warning("Delete Failed. hehe")
+            logger.warning("Delete Failed.")
         return is_successful
 
     def subscribe_to_updates(self, file_path: Path, monitoring_interval_in_seconds: int) -> None:
@@ -229,6 +234,7 @@ class Client:
                         validation_timestamp=int(time.time()),
                         modification_timestamp=server_modification_timestamp,
                     )
+
         except timeout:
             logger.info(
                 f"Client has waited for {monitoring_interval_in_seconds} seconds and will no longer listen for updates."
