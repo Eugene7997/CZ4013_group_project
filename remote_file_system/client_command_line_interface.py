@@ -66,13 +66,13 @@ class ClientCommandLineInterface:
             input_offset: str = command_args[1]
             offset: int = self._parse_offset(input_offset)
             if offset < 0:
-                print(Fore.RED + f"offset should not be negative")
+                print(Fore.RED + "offset should not be negative")
                 return
 
             input_number_of_bytes: str = command_args[2]
             number_of_bytes: int = self._parse_number_of_bytes(input_number_of_bytes)
             if number_of_bytes < 0:
-                print(Fore.RED + f"number of bytes should not be negative")
+                print(Fore.RED + "number of bytes should not be negative")
                 return
 
         except ValueError as e:
