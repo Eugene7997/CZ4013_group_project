@@ -66,7 +66,7 @@ class Server:
                     logger.info(
                         f"Socket is listening for messages at {self.server_ip_address}:{self.server_port_number}."
                     )
-                    incoming_bytes, sender_address = sock.recvfrom(4096)  # TODO review fixed buffer size
+                    incoming_bytes, sender_address = sock.recvfrom(4096)
                     sender_ip_address, sender_port_number = sender_address
                     logger.info(f"Received {len(incoming_bytes)} bytes from {sender_ip_address}:{sender_port_number}.")
 
@@ -95,37 +95,44 @@ class Server:
                 return
 
         if isinstance(message, ReadFileRequest):
-            content: bytes = self.server_file_system.read_file(relative_file_path=message.file_name)
+            content: bytes | None = self.server_file_system.read_file(relative_file_path=message.file_name)
             is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(message.file_name)
+            if not content or not is_successful:
+                reply: ReadFileResponse = ReadFileResponse(reply_id=uuid4(), content=b"", modification_timestamp=0)
+                self._add_message_to_history(message.request_id, reply)
+                send_message(reply, client_ip_address, client_port_number)
+                return
             reply: ReadFileResponse = ReadFileResponse(
                 reply_id=uuid4(), content=content, modification_timestamp=modification_timestamp
             )
             self._add_message_to_history(message.request_id, reply)
             send_message(reply, client_ip_address, client_port_number)
         elif isinstance(message, WriteFileRequest):
-            is_successful, subscribed_clients = self.server_file_system.write_file(
+            write_is_successful, subscribed_clients = self.server_file_system.write_file(
                 relative_file_path=message.file_name, offset=message.offset, file_content=message.content
             )
-            is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(message.file_name)
+            get_modification_timestamp_is_successful, modification_timestamp = (
+                self.server_file_system.get_modified_timestamp(message.file_name)
+            )
+            if not write_is_successful or not get_modification_timestamp_is_successful:
+                reply: WriteFileResponse = WriteFileResponse(
+                    reply_id=uuid4(), is_successful=False, modification_timestamp=0
+                )
+                self._add_message_to_history(message.request_id, reply)
+                send_message(reply, client_ip_address, client_port_number)
             reply: WriteFileResponse = WriteFileResponse(
-                reply_id=uuid4(), is_successful=is_successful, modification_timestamp=modification_timestamp
+                reply_id=uuid4(), is_successful=True, modification_timestamp=modification_timestamp
             )
             self._add_message_to_history(message.request_id, reply)
             send_message(reply, client_ip_address, client_port_number)
-            if is_successful:
+            if write_is_successful:
                 curr_time = int(time.time())
                 for subscribed_client in subscribed_clients:
-                    # TODO: send update notification below only if
-                    #       current time is before monitoring_expiration_timestamp
-                    #       I am not sure about the delays between each subscribed client, so just put a curr time
-
-                    # TODO: I am not sure if at most one invocation semantics applies here.
-                    #       I will skip the implementation of it for now.
-
                     if subscribed_client.monitoring_expiration_timestamp > curr_time:
                         update_notification = UpdateNotification(
                             file_name=message.file_name,
-                            content=message.content,
+                            # content=message.content,
+                            content=self.server_file_system.read_file(relative_file_path=message.file_name),
                             modification_timestamp=modification_timestamp,
                         )
                         send_message(
@@ -134,13 +141,15 @@ class Server:
                             recipient_port_number=subscribed_client.port_number,
                         )
         elif isinstance(message, SubscribeToUpdatesRequest):
-            isSuccessful: bool = self.server_file_system.subscribe_to_updates(
+            is_successful: bool = self.server_file_system.subscribe_to_updates(
                 client_ip_address=message.client_ip_address,
                 client_port_number=message.client_port_number,
                 monitoring_interval_in_seconds=message.monitoring_interval,
                 relative_file_path=message.file_name,
             )
-            reply: SubscribeToUpdatesResponse = SubscribeToUpdatesResponse(is_successful=isSuccessful, reply_id=uuid4())
+            reply: SubscribeToUpdatesResponse = SubscribeToUpdatesResponse(
+                is_successful=is_successful, reply_id=uuid4()
+            )
             self._add_message_to_history(message.request_id, reply)
             send_message(
                 message=reply,
@@ -151,16 +160,23 @@ class Server:
             is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(
                 relative_file_path=message.file_path
             )
+            if not is_successful:
+                logger.warning(f"Server failed to check modification timestamp as {message.file_path} does not exist.")
+                reply: ModifiedTimestampResponse = ModifiedTimestampResponse(
+                    reply_id=uuid4(), modification_timestamp=0, is_successful=False
+                )
+                self._add_message_to_history(message.request_id, reply)
+                send_message(
+                    message=reply, recipient_ip_address=client_ip_address, recipient_port_number=client_port_number
+                )
+
             reply: ModifiedTimestampResponse = ModifiedTimestampResponse(
                 reply_id=uuid4(), modification_timestamp=modification_timestamp, is_successful=is_successful
             )
             self._add_message_to_history(message.request_id, reply)
-            if not is_successful:
-                logger.warning(f"Server failed to check modification timestamp as {message.file_path} does not exist.")
             send_message(
                 message=reply, recipient_ip_address=client_ip_address, recipient_port_number=client_port_number
             )
-
         elif isinstance(message, DeleteFileRequest):
             is_successful = self.server_file_system.delete_file(file_name=message.file_name)
             reply: DeleteFileResponse = DeleteFileResponse(reply_id=uuid4(), is_successful=is_successful)
@@ -171,29 +187,31 @@ class Server:
                 recipient_port_number=client_port_number,
             )
         elif isinstance(message, AppendFileRequest):
-            is_successful, subscribed_clients = self.server_file_system.append_file(
+            append_is_successful, subscribed_clients = self.server_file_system.append_file(
                 relative_file_path=message.file_name, file_content=message.content
             )
-            is_successful, modification_timestamp = self.server_file_system.get_modified_timestamp(message.file_name)
-
+            get_modification_timestamp_is_successful, modification_timestamp = (
+                self.server_file_system.get_modified_timestamp(message.file_name)
+            )
+            if not append_is_successful or not get_modification_timestamp_is_successful:
+                reply: AppendFileResponse = AppendFileResponse(
+                    reply_id=uuid4(), is_successful=False, modification_timestamp=0
+                )
+                self._add_message_to_history(message.request_id, reply)
+                send_message(reply, client_ip_address, client_port_number)
             reply: AppendFileResponse = AppendFileResponse(
-                reply_id=uuid4(), is_successful=is_successful, modification_timestamp=modification_timestamp
+                reply_id=uuid4(), is_successful=True, modification_timestamp=modification_timestamp
             )
             self._add_message_to_history(message.request_id, reply)
             send_message(reply, client_ip_address, client_port_number)
-            if is_successful:
+            if append_is_successful:
                 curr_time = int(time.time())
                 for subscribed_client in subscribed_clients:
-                    # TODO send update notification below only if current time is before monitoring_expiration_timestamp
-                    # I am not sure about the delays between each subscribed client, so just put a curr time
-
-                    # TODO: I am not sure if at most one invocation semantics applies here.
-                    #       I will skip the implementation of it for now.
-
                     if subscribed_client.monitoring_expiration_timestamp > curr_time:
                         update_notification = UpdateNotification(
                             file_name=message.file_name,
-                            content=message.content,
+                            # content=message.content,
+                            content=self.server_file_system.read_file(relative_file_path=message.file_name),
                             modification_timestamp=modification_timestamp,
                         )
                         send_message(
