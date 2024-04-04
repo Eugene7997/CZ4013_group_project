@@ -14,15 +14,23 @@ parser.add_argument(
 )
 parser.add_argument("-ip", "--ip_address", type=str, help="specifies ip number for server")
 parser.add_argument("-port", "--port_number", type=int, help="sets port number for server")
+parser.add_argument(
+    "-dir",
+    "--directory",
+    type=str,
+    help="specify the root directory of the server file system. This "
+    "will be the name of the directory in the project root "
+    "folder",
+    default="server_dir",
+)
 
 args = parser.parse_args()
 
 invocation_method = args.invocation_method
 SERVER_IP_ADDRESS = IPv4Address(args.ip_address)
 SERVER_PORT_NUMBER = args.port_number
+server_root_directory = Path.cwd() / args.directory
 
-# TODO Add server root directory default
-server_root_directory: Path = Path.cwd() / "tests" / "server"
 
 server_file_system = ServerFileSystem(server_root_directory=server_root_directory)
 
