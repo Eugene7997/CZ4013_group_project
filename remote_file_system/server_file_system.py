@@ -41,6 +41,11 @@ class ServerFileSystem:
             logger.warning(f"Server failed to perform a write file operation as no file exists at {full_file_path}")
             return False, None
 
+        if offset < 0 or offset > os.path.getsize(full_file_path):
+            logger.warning(f"Server did not perform a write file operation as the specified offset of {offset} is "
+                           f"invalid or not within the current size of the file.")
+            return False, None
+
         with open(full_file_path, "r+b") as file:
             file.seek(offset)
             file.write(file_content)

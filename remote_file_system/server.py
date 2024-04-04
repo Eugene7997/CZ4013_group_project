@@ -120,6 +120,7 @@ class Server:
                 )
                 self._add_message_to_history(message.request_id, reply)
                 send_message(reply, client_ip_address, client_port_number)
+                return
             reply: WriteFileResponse = WriteFileResponse(
                 reply_id=uuid4(), is_successful=True, modification_timestamp=modification_timestamp
             )
@@ -199,6 +200,7 @@ class Server:
                 )
                 self._add_message_to_history(message.request_id, reply)
                 send_message(reply, client_ip_address, client_port_number)
+                return
             reply: AppendFileResponse = AppendFileResponse(
                 reply_id=uuid4(), is_successful=True, modification_timestamp=modification_timestamp
             )

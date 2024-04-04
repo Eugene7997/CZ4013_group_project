@@ -12,8 +12,8 @@ parser = argparse.ArgumentParser(prog="server_menu", description="Create server 
 parser.add_argument(
     "-i", "--invocation_method", type=int, help="Invocation number, 0 for at least once, 1 for at most once", default=0
 )
-parser.add_argument("-ip", "--ip_address", type=str, help="specifies ip number for server")
-parser.add_argument("-port", "--port_number", type=int, help="sets port number for server")
+parser.add_argument("-sip", "--ip_address", type=str, help="specifies ip number for server")
+parser.add_argument("-sp", "--port_number", type=int, help="sets port number for server")
 parser.add_argument(
     "-dir",
     "--directory",
