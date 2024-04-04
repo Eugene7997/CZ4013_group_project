@@ -44,7 +44,7 @@ def send_message_and_wait_for_reply(
             sock.sendto(outgoing_bytes, recipient_address)
             logger.debug(f"{message} sent to {recipient_ip_address}:{recipient_port_number}.")
 
-            incoming_bytes: bytes = sock.recv(4096)  # TODO review fixed buffer size
+            incoming_bytes: bytes = sock.recv(4096)
             break
         except ConnectionResetError:
             # TODO: consider if we can replace the timeout for connection reset with cleaner solution
