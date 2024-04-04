@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from colorama import init, Fore
 
@@ -7,7 +7,7 @@ from remote_file_system.client_interface import Client
 
 
 class ClientCommandLineInterface:
-    WELCOME_MESSAGE = Fore.GREEN + "Welcome to the Remote File System Client CLI!"
+    WELCOME_MESSAGE = Fore.BLUE + "Welcome to the Remote File System Client CLI!"
     COMMAND_LINE_INTERFACE_OPTIONS = """Available commands:
     read [file_path] [offset] [number_of_bytes]
     write [file_path] [offset] [content]
@@ -72,11 +72,14 @@ class ClientCommandLineInterface:
             print(Fore.RED + f"Invalid arguments were received for read command: {e}")
             return
 
-        raw_file_content: bytes = self.client.read_file(
+        raw_file_content: Optional[bytes] = self.client.read_file(
             file_path=file_path,
             offset=offset,
             number_of_bytes=number_of_bytes,
         )
+        if not raw_file_content:
+            print("File does not exist")
+            return
         try:
             file_content_decoded: str = raw_file_content.decode("utf-8")
             print(file_content_decoded)
