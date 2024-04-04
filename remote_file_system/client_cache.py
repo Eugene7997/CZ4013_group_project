@@ -1,4 +1,5 @@
 import time
+import os
 from pathlib import Path
 from typing import Dict
 
@@ -22,6 +23,14 @@ class Cache:
 
         self.validation_timestamps[file_path] = validation_timestamp
         self.modification_timestamps[file_path] = modification_timestamp
+
+    def remove_from_cache(self, file_path: Path) -> None:
+        full_file_path = self.cache_working_directory.joinpath(file_path)
+        full_file_path.parent.mkdir(parents=True, exist_ok=True)
+        os.remove(full_file_path)
+
+        del self.validation_timestamps[file_path]
+        del self.modification_timestamps[file_path]
 
     def update_cache_after_write(self, file_path: Path, offset: int, file_content: bytes) -> None:
         full_file_path = self.cache_working_directory.joinpath(file_path)
